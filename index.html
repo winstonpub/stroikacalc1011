@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+  <!--
+    БЛОК: Шапка HTML-документа (<head>)
+    ЗА ЧТО ОТВЕЧАЕТ: Задаёт кодировку, адаптацию под экран телефона, описание сайта для поисковиков, значок вкладки (иконку домика) и подключает шрифты Montserrat и Onest.
+    ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Шрифты загружаются с серверов Google Fonts, значок вкладки нарисован прямо внутри атрибута href в формате SVG, а заголовок вкладки после загрузки обновляется из файла src/App.tsx.
+    КАК ИЗМЕНИТЬ: Поменяйте текст в meta description для описания сайта в поиске, замените ссылку в link rel="icon" для другой иконки вкладки или поправьте начальный текст внутри <title>.
+  -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Лемана Про Челябинск — интерактивный калькулятор подвесного потолка Грильято: точная спецификация материалов с артикулами и ценами." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2320282B'/%3E%3Cpath d='M8 24V13l8-6 8 6v11h-5.5v-7h-5v7z' fill='%23FFBF2F'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=Onest:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <title>Лемана Про Челябинск — Калькулятор Грильято</title>
+  </head>
+  <!--
+    БЛОК: Тело страницы (<body>) и точка запуска приложения
+    ЗА ЧТО ОТВЕЧАЕТ: Содержит пустой контейнер <div id="root">, внутрь которого React отрисовывает весь сайт, и запускает стартовый файл программы.
+    ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Подключает скрипт /src/main.tsx, который загружает все страницы и стили.
+    КАК ИЗМЕНИТЬ: Менять id="root" и путь /src/main.tsx не нужно — все видимые блоки сайта редактируются в папке src/.
+  -->
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

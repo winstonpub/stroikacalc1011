@@ -1,0 +1,394 @@
+/* ============================================================================
+ * ФАЙЛ: src/index.css — Глобальные стили, фирменные цвета, анимации и правила печати
+ * ЗА ЧТО ОТВЕЧАЕТ: Задаёт единую цветовую палитру всего сайта, основной шрифт, внешний вид ползунков (слайдеров), анимацию бегущей строки и правила печати страниц смет на 1 лист A4.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Подключает библиотеку Tailwind CSS и шрифт Onest, загруженный в index.html, а CSS-переменные (--fill, --ticker-shift, --ticker-duration) получает напрямую из React-компонентов.
+ * КАК ИЗМЕНИТЬ: Меняйте HEX-коды цветов в блоке @theme ниже — тогда фирменный жёлтый, графитовый или серый цвет автоматически обновится сразу на всём сайте.
+ * ========================================================================= */
+
+@import "tailwindcss";
+
+/* БЛОК: Фирменная палитра цветов и основной шрифт (@theme)
+ * ЗА ЧТО ОТВЕЧАЕТ: Создаёт классы bg-pro, text-pro, bg-graphite, bg-ink, bg-smoke, border-line и шрифт font-sans для всех компонентов.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Значения цветов и название шрифта прописаны прямо здесь.
+ * КАК ИЗМЕНИТЬ: Замените #ffcb05 (жёлтый акцент), #20282b (тёмный графит), #14191b (почти чёрный подвал), #f4f4f2 (светло-серый фон секций) или #e5e4e0 (цвет рамок) на нужные вам цвета. */
+@theme {
+  --color-pro: #ffcb05;
+  --color-pro-dark: #f0bc00;
+  --color-pro-soft: #ffe97a;
+  --color-graphite: #20282b;
+  --color-ink: #14191b;
+  --color-smoke: #f4f4f2;
+  --color-line: #e5e4e0;
+  --font-sans: "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* БЛОК: Базовое поведение страницы, выделение текста и ровные цифры
+ * ЗА ЧТО ОТВЕЧАЕТ: Включает плавную прокрутку по якорям, сглаживание шрифтов, жёлтую подсветку выделенного мышкой текста и моноширинное выравнивание цифр (.tabular) в таблицах и ценах.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Использует цвета и шрифты из блока @theme выше.
+ * КАК ИЗМЕНИТЬ: Цвет выделения текста мышкой меняется в ::selection (background и color). */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-ink font-sans antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #ffcb05;
+  color: #20282b;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* БЛОК: Оформление фирменного ползунка (input[type="range"].pro-range)
+ * ЗА ЧТО ОТВЕЧАЕТ: Рисует жёлто-серую полоску и круглый графитовый бегунок для ползунка «Запас» в калькуляторах и ползунка скорости бегущей строки в админке.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Процент закрашивания жёлтым передаётся из React через CSS-переменную var(--fill).
+ * КАК ИЗМЕНИТЬ: Чтобы поменять толщину полоски, измените height: 6px; чтобы поменять размер или цвет кружка — правьте width/height/background в ::-webkit-slider-thumb и ::-moz-range-thumb. */
+input[type="range"].pro-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 26px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].pro-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #ffcb05 0%,
+    #ffcb05 var(--fill, 50%),
+    #e7e6e2 var(--fill, 50%),
+    #e7e6e2 100%
+  );
+}
+input[type="range"].pro-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #20282b;
+  border: 5px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(20, 25, 27, 0.35), 0 0 0 1px #e5e4e0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="range"].pro-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(20, 25, 27, 0.4), 0 0 0 1px #ffcb05;
+}
+input[type="range"].pro-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #e7e6e2;
+}
+input[type="range"].pro-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: #ffcb05;
+}
+input[type="range"].pro-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #20282b;
+  border: 5px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(20, 25, 27, 0.35), 0 0 0 1px #e5e4e0;
+}
+
+/* БЛОК: Скрытие системных стрелочек в числовых полях ввода (.no-spin) и тонкая полоса прокрутки (.thin-scroll)
+ * ЗА ЧТО ОТВЕЧАЕТ: Убирает стандартные мелкие стрелочки вверх/вниз в полях размеров и делает аккуратный тонкий скроллбар у широких таблиц.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Применяется ко всем полям с классом no-spin и контейнерам таблиц с классом thin-scroll.
+ * КАК ИЗМЕНИТЬ: Толщина скроллбара меняется в height/width у .thin-scroll::-webkit-scrollbar, а его цвет — в background у ::-webkit-scrollbar-thumb. */
+input.no-spin::-webkit-outer-spin-button,
+input.no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input.no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.thin-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #d6d5d1;
+  border-radius: 999px;
+}
+
+/* БЛОК: Анимации сайта (бегущая строка .animate-ticker, плавающий бейдж .animate-floaty, появление схем .animate-scheme-in)
+ * ЗА ЧТО ОТВЕЧАЕТ: Двигает жёлтую бегущую строку в шапке без рывков, плавно покачивает плашки на фотографиях систем и мягко проявляет чертежи при переключении вариантов.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Сдвиг (--ticker-shift) и скорость (--ticker-duration) передаются из компонента src/components/Header.tsx на основе настроек админки.
+ * КАК ИЗМЕНИТЬ: Скорость бегущей строки удобнее менять в «Администрировании» (#/admin); амплитуду покачивания бейджа можно изменить в translateY(-10px) внутри @keyframes floaty. */
+@keyframes ticker {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(var(--ticker-shift, -50%), 0, 0);
+  }
+}
+.animate-ticker {
+  animation: ticker var(--ticker-duration, 28s) linear infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker {
+    animation-play-state: paused;
+  }
+}
+
+/* БЛОК: Мигающая гирлянда у бегущей строки (.garland-bulb)
+ * ЗА ЧТО ОТВЕЧАЕТ: Заставляет каждую лампочку гирлянды по очереди гаснуть и загораться; у каждой лампочки свой сдвиг по времени (задаётся в Header.tsx).
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Задержка animation-delay и цвет приходят из компонента TickerGarland в src/components/Header.tsx.
+ * КАК ИЗМЕНИТЬ: Скорость мигания — длительность 1.8s, глубина — значения opacity и brightness ниже. */
+@keyframes garland-blink {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1.25);
+  }
+  50% {
+    opacity: 0.2;
+    filter: brightness(0.6);
+  }
+}
+.garland-bulb {
+  animation: garland-blink 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .garland-bulb {
+    animation: none;
+  }
+}
+
+/* БЛОК: Падающий снег в шапке (.header-snow)
+ * ЗА ЧТО ОТВЕЧАЕТ: Плавно опускает снежинки через все полосы шапки и слегка покачивает их из стороны в сторону.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Положение, размер, скорость и задержка задаются в HeaderSnow (src/components/Header.tsx).
+ * КАК ИЗМЕНИТЬ: Дальность падения меняется в translateY, амплитуда покачивания — в translateX. */
+.header-snow {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  pointer-events: none;
+}
+.snow-flake {
+  position: absolute;
+  top: -14px;
+  animation: header-snow-fall 10s linear infinite;
+  will-change: transform;
+}
+.snow-flake-core {
+  display: block;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.65);
+  animation: header-snow-sway 3s ease-in-out infinite;
+}
+@keyframes header-snow-fall {
+  from {
+    transform: translate3d(0, -18px, 0);
+  }
+  to {
+    transform: translate3d(var(--snow-drift, 20px), 190px, 0);
+  }
+}
+@keyframes header-snow-sway {
+  0%,
+  100% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-snow {
+    display: none;
+  }
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-floaty {
+  animation: floaty 7s ease-in-out infinite;
+}
+
+@keyframes scheme-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-scheme-in {
+  animation: scheme-in 0.28s ease-out both;
+}
+
+/* БЛОК: Правила печати страниц спецификаций на один лист A4 (@media print)
+ * ЗА ЧТО ОТВЕЧАЕТ: Скрывает шапку, подвал, кнопки и браузерные колонтитулы при печати из калькуляторов, оставляя на листе A4 только параметры и таблицу сметы.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Срабатывает автоматически, когда хук src/utils/pagePrint.ts добавляет класс spec-print-active на тег <body>.
+ * КАК ИЗМЕНИТЬ: Внутренние отступы печатного листа меняются в padding: 14mm 12mm у .spec-print-area, а размер шрифта таблицы на бумаге — в font-size: 9.5pt у .spec-print-table table. */
+.spec-print-only {
+  display: none;
+}
+
+/* Скрытый печатный лист внутри калькуляторов: на экране не виден, при печати подменяет страницу (см. SpecSheet.tsx) */
+.spec-print-portal {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body.spec-print-overlay #root {
+    display: none !important;
+  }
+  body.spec-print-overlay .spec-print-portal {
+    display: block !important;
+  }
+
+  html:has(body.spec-print-active),
+  body.spec-print-active {
+    background: #fff !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.spec-print-active header,
+  body.spec-print-active footer {
+    display: none !important;
+  }
+
+  body.spec-print-active .spec-print-area {
+    padding: 14mm 12mm !important;
+    max-height: 297mm;
+    overflow: hidden !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  body.spec-print-active * {
+    visibility: hidden !important;
+  }
+  body.spec-print-active .spec-print-area,
+  body.spec-print-active .spec-print-area * {
+    visibility: visible !important;
+  }
+  body.spec-print-active .spec-no-print {
+    display: none !important;
+  }
+
+  body.spec-print-active .spec-print-page {
+    padding: 0 !important;
+  }
+  body.spec-print-active .spec-print-page,
+  body.spec-print-active .spec-print-area {
+    position: static !important;
+    margin: 0 !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  body.spec-print-active .spec-print-area h1 {
+    font-size: 22pt !important;
+    line-height: 1.1 !important;
+    margin: 0 0 12px !important;
+    color: #14191b !important;
+  }
+
+  body.spec-print-active .spec-print-area [class*="grid"] {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    margin: 0 0 12px !important;
+    border: 1px solid #e5e4e0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    break-inside: avoid;
+  }
+  body.spec-print-active .spec-print-area [class*="grid"] > div {
+    background: #fff !important;
+    padding: 6px 8px !important;
+    border-right: 1px solid #e5e4e0 !important;
+    border-bottom: 1px solid #e5e4e0 !important;
+  }
+
+  body.spec-print-active .spec-print-table {
+    border: 1px solid #e5e4e0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+  body.spec-print-active .spec-print-table > div {
+    overflow: visible !important;
+  }
+  body.spec-print-active .spec-print-table table {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-collapse: collapse !important;
+    font-size: 9.5pt !important;
+  }
+  body.spec-print-active .spec-print-table thead {
+    display: table-header-group !important;
+  }
+  body.spec-print-active .spec-print-table tfoot {
+    display: table-row-group !important;
+    break-inside: avoid;
+  }
+  body.spec-print-active .spec-print-table tr {
+    break-inside: avoid;
+  }
+  body.spec-print-active .spec-print-table th,
+  body.spec-print-active .spec-print-table td {
+    padding: 5px 7px !important;
+  }
+  body.spec-print-active .spec-print-table a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+  body.spec-print-active .spec-print-table svg {
+    display: none !important;
+  }
+  body.spec-print-active .spec-print-table tfoot td {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body.spec-print-active .spec-print-table tfoot .text-\[40px\] {
+    font-size: 20pt !important;
+  }
+
+  body.spec-print-active .spec-print-only {
+    display: block !important;
+    visibility: visible !important;
+  }
+}

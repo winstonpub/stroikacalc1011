@@ -1,0 +1,73 @@
+# ============================================================================
+# ФАЙЛ: .github/workflows/deploy.yml — автоматическая сборка и публикация сайта на GitHub Pages
+# ЗА ЧТО ОТВЕЧАЕТ: При каждом push в ветку main (или по кнопке «Run workflow» во вкладке Actions)
+#   GitHub бесплатно собирает проект и выкладывает готовый сайт по адресу
+#   https://<ЛОГИН>.github.io/<ИМЯ-РЕПОЗИТОРИЯ>/
+# ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Исходный код из ветки main, зависимости — из package-lock.json (npm ci),
+#   команда сборки — из package.json («npm run build» создаёт папку dist/).
+# КАК ИЗМЕНИТЬ:
+#   — Если основная ветка называется иначе (master), замените "main" в блоке on.push.branches.
+#   — Если сайт должен открываться без подпапки (репозиторий <логин>.github.io), ничего менять не нужно.
+#   — Имя репозитория задаёт адрес сайта: для страницы /StroikaCalc репозиторий должен называться StroikaCalc.
+# ============================================================================
+
+name: Deploy to GitHub Pages
+
+# Когда запускать публикацию
+on:
+  push:
+    branches: ["main"]
+  # Возможность запустить сборку вручную: вкладка Actions → Deploy to GitHub Pages → Run workflow
+  workflow_dispatch:
+
+# Права, которые нужны для публикации в GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Не даём двум публикациям идти одновременно
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  # ШАГ 1: собрать сайт
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Получить код репозитория
+        uses: actions/checkout@v4
+
+      - name: Установить Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          # Vite 7 требует Node.js 20.19+ или 22.12+; 22 — самая совместимая версия
+          node-version: 22
+          cache: npm
+
+      - name: Установить зависимости
+        run: npm ci
+
+      - name: Собрать проект
+        run: npm run build
+
+      - name: Подготовить настройки GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Загрузить папку dist как артефакт
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  # ШАГ 2: опубликовать собранный сайт
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Опубликовать на GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
