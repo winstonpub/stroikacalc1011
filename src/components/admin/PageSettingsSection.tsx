@@ -28,6 +28,8 @@ import {
   CALC_SIZE_MAX,
   CALC_SIZE_MIN,
   CALC_SPARE_MAX,
+  LOGO_FOOTER_HEIGHT_MAX,
+  LOGO_FOOTER_HEIGHT_MIN,
   LOGO_HEIGHT_MAX,
   LOGO_HEIGHT_MIN,
   LOGO_OFFSET_MAX,
@@ -46,7 +48,7 @@ import { CELL_SIZES, COLORS, HANGERS } from "../../data/grilyato";
 import { ARMSTRONG_ANGLES, ARMSTRONG_PROFILES, ARMSTRONG_TILES } from "../../data/armstrong";
 import { SIDING_COLORS, SIDING_TRIM_PARTS, getAvailableSidingColors } from "../../data/siding";
 import { TickerEditor, FooterEditor, NumberField, SheetEditor } from "../../pages/AdminPage";
-import { LogoMark } from "../Header";
+import { FooterLogoMark, LogoMark } from "../Header";
 import { cn } from "../../utils/cn";
 
 /* Подписи и теги для страниц, у которых есть карточка в блоке «Выберите Калькулятор» на главной.
@@ -501,7 +503,10 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
       { id: "center", label: "По центру" },
       { id: "right", label: "Справа" },
     ];
-    const maxH = LOGO_HEIGHT_MAX;
+    const isFooter = where === "footer";
+    const minH = isFooter ? LOGO_FOOTER_HEIGHT_MIN : LOGO_HEIGHT_MIN;
+    const maxH = isFooter ? LOGO_FOOTER_HEIGHT_MAX : LOGO_HEIGHT_MAX;
+    const LogoComponent = isFooter ? FooterLogoMark : LogoMark;
     return (
       <div className="space-y-3 border-t border-line pt-4 first:border-t-0 first:pt-0">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -540,7 +545,7 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
                 ))}
               </div>
             </div>
-            {range("Высота", Math.min(place.height, maxH), LOGO_HEIGHT_MIN, maxH, "px", (v) => setPlace(where, { height: v }))}
+            {range("Высота", Math.min(Math.max(place.height, minH), maxH), minH, maxH, "px", (v) => setPlace(where, { height: v }))}
             {range("Сдвиг по горизонтали", place.offsetX, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, "px", (v) => setPlace(where, { offsetX: v }))}
             {range("Сдвиг по вертикали", place.offsetY, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, "px", (v) => setPlace(where, { offsetY: v }))}
             {colorField("Цвет надписи «Челябинск»", place.cityColor, (v) => setPlace(where, { cityColor: v }))}
@@ -549,7 +554,8 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
             <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-graphite/45">Предпросмотр</div>
             <div
               className={cn(
-                "flex h-[140px] items-center overflow-hidden rounded-xl px-4",
+                "flex items-center overflow-hidden rounded-xl px-4",
+                isFooter ? "h-[210px]" : "h-[140px]",
                 place.align === "center" && "justify-center",
                 place.align === "right" && "justify-end",
               )}
@@ -557,7 +563,7 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
             >
               {place.visible ? (
                 <span style={{ transform: `translate(${place.offsetX}px, ${place.offsetY}px)` }}>
-                  <LogoMark height={Math.min(place.height, maxH)} cityColor={place.cityColor} />
+                  <LogoComponent height={Math.min(Math.max(place.height, minH), maxH)} cityColor={place.cityColor} />
                 </span>
               ) : (
                 <span className="text-[12px] font-semibold text-white/50">Логотип скрыт</span>

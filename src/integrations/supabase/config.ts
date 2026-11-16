@@ -18,8 +18,8 @@ const env = (import.meta as unknown as { env?: Record<string, string | undefined
  * ЗА ЧТО ОТВЕЧАЕТ: Единственное место, которое нужно заполнить, чтобы сайт связался с базой.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Project Settings → API в панели Supabase.
  * КАК ИЗМЕНИТЬ: Замените текст в кавычках на свои значения и сохраните файл, затем выполните сборку. */
-export const SUPABASE_URL = (env.VITE_SUPABASE_URL ?? "https://vyhvxeejejkjjjqvsvzu.supabase.co").trim() || "https://vyhvxeejejkjjjqvsvzu.supabase.co";
-export const SUPABASE_ANON_KEY = (env.VITE_SUPABASE_ANON_KEY ?? "sb_publishable_bjdoJv642RfVn1K9gboLFw_cazkP4tD").trim() || "sb_publishable_bjdoJv642RfVn1K9gboLFw_cazkP4tD";
+export const SUPABASE_URL = (env.VITE_SUPABASE_URL ?? "").trim() || "https://YOUR-PROJECT.supabase.co";
+export const SUPABASE_ANON_KEY = (env.VITE_SUPABASE_ANON_KEY ?? "").trim() || "YOUR-ANON-PUBLIC-KEY";
 
 /* БЛОК: Проверка, заполнены ли данные подключения (isSupabaseConfigured)
  * ЗА ЧТО ОТВЕЧАЕТ: Говорит сайту, подключена ли база данных, или в конфиге всё ещё стоят заглушки.
@@ -32,21 +32,21 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /* БЛОК: Короткое описание состояния подключения для админки (describeSupabaseConfig)
- * ЗА ЧТО ОТВЕЧАЕТ: Возвращает текст, который показывается в панели «База данных».
- * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: isSupabaseConfigured() и SUPABASE_URL.
+ * ЗА ЧТО ОТВЕЧАЕТ: Возвращает текст, который показывается в панели состояния базы данных
+ *   на экране входа: только факт подключения, без адреса проекта и подсказок по коду.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: isSupabaseConfigured().
  * КАК ИЗМЕНИТЬ: Тексты сообщений меняются прямо в этом блоке. */
 export function describeSupabaseConfig(): { configured: boolean; label: string; detail: string } {
   if (!isSupabaseConfigured()) {
     return {
       configured: false,
       label: "База данных не подключена",
-      detail:
-        "Впишите Project URL и anon-ключ в src/integrations/supabase/config.ts — инструкция в файле SUPABASE.md.",
+      detail: "",
     };
   }
   return {
     configured: true,
-    label: "Supabase подключён",
-    detail: SUPABASE_URL.replace(/^https:\/\//, ""),
+    label: "База данных подключена",
+    detail: "",
   };
 }

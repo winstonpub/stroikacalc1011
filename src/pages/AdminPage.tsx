@@ -96,6 +96,19 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 const fmtNum = (value: number) => new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(value);
 
+/* БЛОК: Подпись роли администратора в шапке панели (roleLabel)
+ * ЗА ЧТО ОТВЕЧАЕТ: Показывает роль по-русски: owner — «Владелец», admin — «Администратор», остальные роли выводятся как есть.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Поле role из таблицы admins базы Supabase.
+ * КАК ИЗМЕНИТЬ: Добавьте или переименуйте подписи в объекте ROLES ниже. */
+const ROLES: Record<string, string> = {
+  owner: "Владелец",
+  admin: "Администратор",
+};
+
+function roleLabel(role: string): string {
+  return ROLES[role] ?? role;
+}
+
 /* БЛОК: Сворачивание и разворачивание крупных разделов админки (useCollapsedSections, CollapseButton, Collapsible)
  * ЗА ЧТО ОТВЕЧАЕТ: Позволяет сворачивать разделы «Карта страниц», «Настройка страниц» и «Карта блоков» кнопкой справа от заголовка. По умолчанию все разделы свёрнуты; выбранное состояние запоминается между визитами.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Хранит состояние развёрнутых секций в localStorage под ключом "admin:expanded-sections".
@@ -265,8 +278,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
               Администрирование
             </h1>
             <p className="mt-2 text-[14px] leading-relaxed text-white/60">
-              Вход по аккаунту базы данных Supabase. Панель открывается только тем, чья почта
-              добавлена в список администраторов.
+              Введите почту и пароль администратора.
             </p>
 
             <form onSubmit={submit} className="mt-6 space-y-4">
@@ -376,7 +388,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
               <Cloud size={15} strokeWidth={2.3} className="mt-0.5 shrink-0" />
               <span>
                 <span className="block font-bold">{db.label}</span>
-                <span className="mt-0.5 block opacity-80">{db.detail}</span>
+                {db.detail && <span className="mt-0.5 block opacity-80">{db.detail}</span>}
               </span>
             </div>
 
@@ -1697,7 +1709,7 @@ export default function AdminPage() {
                     <Users size={14} strokeWidth={2.4} />
                     {session.email}
                     <span className="rounded-full bg-pro/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-graphite">
-                      {session.role}
+                      {roleLabel(session.role)}
                     </span>
                   </div>
                 )}

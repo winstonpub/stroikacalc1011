@@ -11,7 +11,7 @@ import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { useSiteSettings } from "../data/siteSettings";
 import { cn } from "../utils/cn";
 import { FooterIcon } from "./FooterIcon";
-import { LogoMark } from "./Header";
+import { FooterLogoMark } from "./Header";
 
 /* БЛОК: Компонент подвала сайта (SiteFooter)
  * ЗА ЧТО ОТВЕЧАЕТ: Отбирает включённые ссылки и строки контактов, автоматически перестраивает сетку на 2, 3 или 4 колонки (если какая-то колонка полностью скрыта) и рисует подвал.
@@ -48,7 +48,7 @@ export default function SiteFooter() {
                 aria-label="Челябинск Стройка — на главную"
                 style={{ transform: `translate(${logo.offsetX}px, ${logo.offsetY}px)` }}
               >
-                <LogoMark height={Math.min(logo.height, 64)} cityColor={logo.cityColor} />
+                <FooterLogoMark height={Math.min(logo.height, 200)} cityColor={logo.cityColor} />
               </a>
             )}
           </div>

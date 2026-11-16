@@ -111,8 +111,7 @@ export async function signInAdmin(
   if (!supabase) {
     return {
       ok: false,
-      error:
-        "База данных Supabase не подключена. Впишите Project URL и anon-ключ в src/integrations/supabase/config.ts (инструкция — SUPABASE.md).",
+      error: "База данных не подключена.",
     };
   }
 

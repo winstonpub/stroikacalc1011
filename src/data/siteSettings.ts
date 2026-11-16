@@ -157,7 +157,9 @@ export interface LogoSettings {
   favicon: FaviconSettings;
 }
 export const LOGO_HEIGHT_MIN = 24;
-export const LOGO_HEIGHT_MAX = 64;
+export const LOGO_HEIGHT_MAX = 88;
+export const LOGO_FOOTER_HEIGHT_MIN = 48;
+export const LOGO_FOOTER_HEIGHT_MAX = 200;
 export const LOGO_OFFSET_MAX = 60;
 
 export const CALC_SIZE_MIN = 0.1;
@@ -191,6 +193,7 @@ export interface SiteSettings {
   /** Логотипы в шапке и подвале */
   logo: LogoSettings;
   defaultsVersion?: number;
+  logoVersion?: number;
   knownSheetIds?: string[];
   knownMenuIds?: string[];
   knownFooterLinkIds?: string[];
@@ -362,11 +365,12 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     },
   },
   logo: {
-    header: { visible: true, height: 56, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
-    footer: { visible: true, height: 56, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
+    header: { visible: true, height: 68, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
+    footer: { visible: true, height: 140, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
     favicon: { background: "#20282B", color: "#FFBF2F", radius: 7 },
   },
   defaultsVersion: 2,
+  logoVersion: 2,
 };
 
 /* БЛОК: Проверка, очистка и совместимость настроек со старыми версиями (sanitize)
@@ -572,9 +576,13 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
         cityColor: d.cityColor,
       };
     }
+    const hasV2Logo = typeof raw.logoVersion === "number" && raw.logoVersion >= 2;
+    const isFooter = d === base.logo.footer;
+    const minH = isFooter ? LOGO_FOOTER_HEIGHT_MIN : LOGO_HEIGHT_MIN;
+    const maxH = isFooter ? LOGO_FOOTER_HEIGHT_MAX : LOGO_HEIGHT_MAX;
     return {
       visible: typeof o.visible === "boolean" ? o.visible : d.visible,
-      height: num(o.height, d.height, LOGO_HEIGHT_MIN, LOGO_HEIGHT_MAX, 0),
+      height: hasV2Logo ? num(o.height, d.height, minH, maxH, 0) : d.height,
       align: o.align === "left" || o.align === "center" || o.align === "right" ? o.align : d.align,
       offsetX: num(o.offsetX, d.offsetX, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, 0),
       offsetY: num(o.offsetY, d.offsetY, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, 0),
@@ -679,6 +687,7 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
     },
     logo: logoSettings,
     defaultsVersion: 2,
+    logoVersion: 2,
     knownSheetIds: Array.from(new Set([...known, ...defaultIds])),
     knownMenuIds: Array.from(new Set([...knownMenu, ...base.menu.map((item) => item.id)])),
     knownFooterLinkIds: Array.from(new Set([...knownFooterLinks, ...base.footer.links.map((item) => item.id)])),

@@ -35,7 +35,7 @@ create policy "admins_select_own"
 
 -- 4. Ваш аккаунт: замените почту на свою и запустите запрос
 insert into public.admins (email, role)
-values ('zingerkapyt@rambler.ru', 'owner')
+values ('you@example.com', 'owner')
 on conflict (email) do update set role = excluded.role;
 
 -- 5. Чтобы дать доступ второму человеку — раскомментируйте и впишите его почту
