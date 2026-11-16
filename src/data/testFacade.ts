@@ -27,12 +27,14 @@ import {
 
 export type TestFacadeMode = "side" | "side-gable" | "gable" | "broken-gable";
 
-/** Раскладка вертикальных стыков H-профиля: четыре независимых варианта, активен ровно один.
+/** Раскладка вертикальных стыков H-профиля: независимые варианты, активен ровно один
+ *  (четыре на странице «Сайдинг», на странице «Тест» дополнительно «От центра»).
  *  «Самый выгодный» — автоматический подбор (сетка слева, сетка справа, симметрия, равномерная)
  *  по минимуму закупаемых панелей; «Симметрично» — зеркально от центра;
+ *  «От центра» — H-профиль ровно по центру фасада, от него целые планки 3 м в обе стороны;
  *  «Слева» — целые планки 3 м от левого края, подрезка справа;
  *  «Справа» — зеркально: целые планки от правого края, подрезка слева. */
-export type HProfilePlacement = "optimal" | "symmetric" | "left" | "right";
+export type HProfilePlacement = "optimal" | "symmetric" | "center" | "left" | "right";
 
 export const H_PROFILE_PLACEMENTS: { id: HProfilePlacement; label: string; hint: string }[] = [
   { id: "optimal", label: "Самый выгодный", hint: "Автоподбор: из вариантов «Симметрично», «Слева» и «Справа» выбирается самый дешёвый." },
@@ -40,6 +42,22 @@ export const H_PROFILE_PLACEMENTS: { id: HProfilePlacement; label: string; hint:
   { id: "left", label: "Слева", hint: "Цельные планки начинаются от левого края, подрезка уходит вправо." },
   { id: "right", label: "Справа", hint: "Цельные планки начинаются от правого края, подрезка уходит влево." },
 ];
+
+/* БЛОК: Кнопки смещения H-профиля для страницы «Тест» (TEST_H_PROFILE_PLACEMENTS)
+ * ЗА ЧТО ОТВЕЧАЕТ: Те же четыре варианта, что на странице «Сайдинг», плюс кнопка «От центра» сразу после
+ *   «Симметрично»: H-профиль ставится ровно по центру фасада, остальные стыки идут от него через длину
+ *   панели (3 м) в обе стороны, подрезка уходит к краям.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Список H_PROFILE_PLACEMENTS выше.
+ * КАК ИЗМЕНИТЬ: Подпись и подсказка кнопки — в H_PROFILE_PLACEMENT_CENTER. Чтобы кнопка появилась и на
+ *   странице «Сайдинг», включите centerPlacement в VARIANT_FEATURES (src/components/TestSidingCalculator.tsx). */
+export const H_PROFILE_PLACEMENT_CENTER: { id: HProfilePlacement; label: string; hint: string } = {
+  id: "center",
+  label: "От центра",
+  hint: "H профиль стоит ровно по центру фасада, панели раскладываются от него в обе стороны.",
+};
+
+export const TEST_H_PROFILE_PLACEMENTS: { id: HProfilePlacement; label: string; hint: string }[] =
+  H_PROFILE_PLACEMENTS.flatMap((item) => (item.id === "symmetric" ? [item, H_PROFILE_PLACEMENT_CENTER] : [item]));
 
 export const TEST_FACADE_MODES = [
   { id: "side", label: "Одна сторона" },
@@ -268,7 +286,10 @@ export function sanitizeTestFacade(raw: unknown): TestFacadeSettings {
 function sanitizeHPlacement(rawPlacement: unknown, rawAlign: unknown): HProfilePlacement {
   const hasAlign = rawAlign === "left" || rawAlign === "right";
   if (!hasAlign) {
-    if (rawPlacement === "optimal" || rawPlacement === "symmetric" || rawPlacement === "left" || rawPlacement === "right") {
+    if (
+      rawPlacement === "optimal" || rawPlacement === "symmetric" || rawPlacement === "center" ||
+      rawPlacement === "left" || rawPlacement === "right"
+    ) {
       return rawPlacement;
     }
     return "optimal";
@@ -533,13 +554,26 @@ export function clampGableOpening(
  *   «Самый выгодный» — та же сетка 3 м от левого края, что и стандартный калькулятор (база для автоподбора);
  *   «Слева» — целые планки 3 м от левого края, подрезка справа;
  *   «Справа» — зеркально: целые планки от правого края, подрезка слева;
- *   «Симметрично» — одинаковые подрезы с двух сторон, центр зеркален.
+ *   «Симметрично» — одинаковые подрезы с двух сторон, центр зеркален;
+ *   «От центра» (страница «Тест») — H-профиль ровно по центру фасада, от него стыки через 3 м в обе стороны.
  *   Возвращает позиции швов в мм.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Длину фасада в мм и вариант placement.
  * КАК ИЗМЕНИТЬ: Длина панели берётся из SIDING_ELEMENTS.panel.length. */
 export function getSeamRule(lengthMm: number, placement: HProfilePlacement): number[] {
   const L = Math.max(100, Math.round(lengthMm));
   const panelLen = SIDING_ELEMENTS.panel.length;
+
+  if (placement === "center") {
+    // «От центра»: центральный H-профиль ставится всегда (даже если фасад короче одной панели),
+    // дальше целые панели 3 м идут от него к обоим краям, подрезка остаётся у краёв.
+    const center = Math.round(L / 2);
+    const seams: number[] = [center];
+    for (let x = center - panelLen; x > 0; x -= panelLen) seams.push(x);
+    for (let x = center + panelLen; x < L; x += panelLen) seams.push(x);
+    seams.sort((a, b) => a - b);
+    return seams;
+  }
+
   if (L <= panelLen) return [];
 
   if (placement === "right") {

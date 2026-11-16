@@ -75,6 +75,16 @@ function LogoWordmarkPaths() {
   );
 }
 
+/* БЛОК: Расстояние от логотипа до значка раскрывающегося списка (LOGO_CHEVRON_GAP)
+ * ЗА ЧТО ОТВЕЧАЕТ: Держит значок списка на том же видимом расстоянии от букв логотипа, что и на сайте
+ *   tehfishka (там измерено 16,3 px), при любой высоте логотипа из админки.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: У картинки логотипа справа есть пустое поле — 32,8 из 174 единиц её высоты.
+ *   Оно растёт вместе с логотипом, поэтому вычитается из нужного расстояния.
+ * КАК ИЗМЕНИТЬ: Чтобы придвинуть или отодвинуть значок, поменяйте число LOGO_CHEVRON_GAP (в пикселях). */
+const LOGO_CHEVRON_GAP = 16.3;
+const LOGO_VIEW_HEIGHT = 174;
+const LOGO_RIGHT_PADDING = 32.8;
+
 export function LogoMark({
   height = 60,
   className,
@@ -310,6 +320,10 @@ function BrandLogoMenu({
     return path !== "/" && route.startsWith(path);
   };
 
+  /* Отступ значка списка: нужное видимое расстояние минус пустое поле справа внутри картинки логотипа */
+  const logoHeight = Math.min(logo.height, 88);
+  const chevronMargin = LOGO_CHEVRON_GAP - (LOGO_RIGHT_PADDING * logoHeight) / LOGO_VIEW_HEIGHT;
+
   useEffect(() => {
     if (!open) return;
     const onPointer = (e: PointerEvent) => {
@@ -362,10 +376,7 @@ function BrandLogoMenu({
         aria-label="Челябинск Стройка — на главную"
         className="group flex items-center shrink-0 rounded-[10px] py-0.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c400]"
       >
-        <LogoMark
-          height={Math.min(logo.height, 88)}
-          className="transition-transform group-hover:scale-[1.03]"
-        />
+        <LogoMark height={logoHeight} className="transition-transform group-hover:scale-[1.03]" />
       </a>
 
       {pages.length > 0 && (
@@ -377,8 +388,9 @@ function BrandLogoMenu({
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
+          style={{ marginLeft: chevronMargin }}
           className={cn(
-            "relative z-10 -ml-1.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-[#f5c400] text-[#20282b] cursor-pointer transition-all duration-150 hover:bg-pro-soft hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-graphite",
+            "relative z-10 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-[#f5c400] text-[#20282b] cursor-pointer transition-all duration-150 hover:bg-pro-soft hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-graphite",
             open && "ring-2 ring-white/85",
           )}
         >

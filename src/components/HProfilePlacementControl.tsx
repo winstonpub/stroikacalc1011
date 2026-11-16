@@ -1,19 +1,22 @@
 /* ============================================================================
- * ФАЙЛ: src/components/HProfilePlacementControl.tsx — Смещение H-профиля на странице «Тест»
- * ЗА ЧТО ОТВЕЧАЕТ: Четыре независимые кнопки раскладки вертикальных стыков панелей, активна ровно одна:
+ * ФАЙЛ: src/components/HProfilePlacementControl.tsx — Смещение H-профиля в блоке «План фасада»
+ * ЗА ЧТО ОТВЕЧАЕТ: Независимые кнопки раскладки вертикальных стыков панелей, активна ровно одна:
  *   «Самый выгодный» — автоподбор с минимумом панелей и остатков; «Симметрично» — зеркально от центра;
+ *   «От центра» (только страница «Тест») — H-профиль ровно по центру, панели идут от него в обе стороны;
  *   «Слева» — целые планки 3 м от левого края; «Справа» — зеркально от правого края.
- * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Активный вариант value из src/data/testFacade.ts.
- * КАК ИЗМЕНИТЬ: Подписи и подсказки кнопок — в H_PROFILE_PLACEMENTS (src/data/testFacade.ts).
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Активный вариант value и список кнопок options из src/data/testFacade.ts.
+ * КАК ИЗМЕНИТЬ: Подписи и подсказки кнопок — в H_PROFILE_PLACEMENTS и H_PROFILE_PLACEMENT_CENTER
+ *   (src/data/testFacade.ts); значки кнопок — в PLACEMENT_ICONS ниже.
  * ========================================================================= */
 
-import { AlignLeft, AlignRight, Coins, Columns2 } from "lucide-react";
+import { AlignLeft, AlignRight, Coins, Columns2, UnfoldHorizontal } from "lucide-react";
 import { H_PROFILE_PLACEMENTS, type HProfilePlacement } from "../data/testFacade";
 import { cn } from "../utils/cn";
 
 const PLACEMENT_ICONS: Record<HProfilePlacement, typeof Coins> = {
   optimal: Coins,
   symmetric: Columns2,
+  center: UnfoldHorizontal,
   left: AlignLeft,
   right: AlignRight,
 };
@@ -21,10 +24,13 @@ const PLACEMENT_ICONS: Record<HProfilePlacement, typeof Coins> = {
 export default function HProfilePlacementControl({
   value,
   onChange,
+  options = H_PROFILE_PLACEMENTS,
 }: {
   value: HProfilePlacement;
   seams?: number[];
   onChange: (value: HProfilePlacement) => void;
+  /** Список кнопок: по умолчанию четыре варианта страницы «Сайдинг»; страница «Тест» передаёт список с «От центра» */
+  options?: { id: HProfilePlacement; label: string; hint: string }[];
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-2.5 lg:px-5">
@@ -33,7 +39,7 @@ export default function HProfilePlacementControl({
           Смещение H профиля
         </span>
         <div className="flex flex-wrap items-center gap-1 rounded-xl bg-smoke p-1" role="group" aria-label="Смещение H профиля">
-          {H_PROFILE_PLACEMENTS.map(({ id, label, hint }) => {
+          {options.map(({ id, label, hint }) => {
             const Icon = PLACEMENT_ICONS[id];
             const active = value === id;
             return (

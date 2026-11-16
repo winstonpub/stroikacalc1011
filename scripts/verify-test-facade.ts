@@ -13,6 +13,7 @@ import {
   DEFAULT_TEST_FACADE,
   GABLE_TYPE_OPTIONS,
   H_PROFILE_PLACEMENTS,
+  TEST_H_PROFILE_PLACEMENTS,
   TEST_FACADE_MODES,
   applyGableType,
   calcTestFacade,
@@ -106,6 +107,26 @@ test("symmetric placement mirrors seams around the center", () => {
   assert.deepEqual(getSeamRule(3000, "symmetric"), []);
   assert.deepEqual(getSeamRule(2000, "optimal"), []);
   assert.deepEqual(getSeamRule(3001, "optimal"), [3000]);
+});
+
+test("«От центра» puts an H profile at the facade centre and lays whole panels outwards", () => {
+  const panel = SIDING_ELEMENTS.panel.length;
+  for (const facadeLength of [2, 3, 4, 5, 6, 8, 10, 12.5]) {
+    const L = Math.round(facadeLength * 1000);
+    const seams = getSeamRule(L, "center");
+    assert.ok(seams.includes(L / 2), `центральный шов для фасада ${facadeLength} м`);
+    assert.deepEqual(seams, [...seams].reverse().map((s) => L - s));
+    const segments = [seams[0], ...seams.slice(1).map((s, i) => s - seams[i]), L - seams[seams.length - 1]];
+    assert.ok(segments.every((segment) => segment > 0 && segment <= panel));
+    assert.ok(segments.slice(1, -1).every((segment) => segment === panel), "между крайними кусками — только целые панели");
+  }
+  assert.deepEqual(getSeamRule(10000, "center"), [2000, 5000, 8000]);
+  assert.deepEqual(getSeamRule(2000, "center"), [1000], "центральный H-профиль ставится и на фасаде короче панели");
+  assert.deepEqual(
+    TEST_H_PROFILE_PLACEMENTS.map((item) => item.label),
+    ["Самый выгодный", "Симметрично", "От центра", "Слева", "Справа"],
+  );
+  assert.equal(sanitizeTestFacade({ hPlacement: "center" }).hPlacement, "center");
 });
 
 test("H buttons are four independent modes, exactly one active", () => {

@@ -1,7 +1,9 @@
 /* ============================================================================
- * ФАЙЛ: src/components/TestSidingCalculator.tsx — Калькулятор ПВХ сайдинга для страницы «Сайдинг».
+ * ФАЙЛ: src/components/TestSidingCalculator.tsx — Калькулятор ПВХ сайдинга для страниц «Сайдинг» и «Тест».
  * ЗА ЧТО ОТВЕЧАЕТ: Общий компонент расчёта фасада, планов, раскроя, печати и спецификации.
- *   Используется на странице «Сайдинг» через SidingCalculator.tsx. Страница «Тест» сейчас показывает заглушку.
+ *   Используется на странице «Сайдинг» через SidingCalculator.tsx и на странице «Тест» напрямую (src/pages/TestPage.tsx).
+ *   Чем страницы отличаются (стартовый фасад без окон и дверей, кнопка «От центра», закреплённый «План фасада») —
+ *   перечислено в VARIANT_FEATURES ниже; там же эти отличия можно включить и для страницы «Сайдинг».
  *   Режимы: обычный фасад, фасад с фронтоном, отдельный фронтон и 3D. Геометрия фронтонов и раскрой находятся в src/data/testFacade.ts.
  *   В режиме 3D доступны изометрия и вид сверху с размерами дома и настройками кровли.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Вся математика раскроя, габариты элементов и стартовый пример приходят из src/data/siding.ts, сохранённый ввод пользователя — из localStorage ("test:siding-input", отдельно от страницы «Сайдинг»), стартовые значения и цвета — из настроек страницы «Сайдинг» в админке, печать — из src/utils/printSidingLayout.ts, полноэкранное окно плана — из src/components/SidingPlanLightbox.tsx.
@@ -10,7 +12,7 @@
  *   — Подписи кнопок, заголовки блоков, цвета линий на плане фасада и колонки таблицы меняются в блоках ниже.
  * ========================================================================= */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import {
   AppWindow,
@@ -80,6 +82,7 @@ import {
   saveTestFacade,
   clampGableOpening,
   withStandardFacadeColors,
+  TEST_H_PROFILE_PLACEMENTS,
   type BrokenGableParameters,
   type GableType,
   type HProfilePlacement,
@@ -101,7 +104,9 @@ const MONO = "'JetBrains Mono', ui-monospace, monospace";
 const fmt2 = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const m2 = (v: number) => fmt2.format(Math.round(v * 100) / 100);
 
-function loadInput(storageKey: string = TEST_STORAGE_KEY): SidingInput {
+function loadInput(storageKey: string = TEST_STORAGE_KEY, withDefaultOpenings: boolean = true): SidingInput {
+  /* Стартовые проёмы: на странице «Сайдинг» — окно и дверь из DEFAULT_SIDING, на странице «Тест» — фасад без проёмов */
+  const defaultOpenings = withDefaultOpenings ? DEFAULT_SIDING.openings : [];
   try {
     const raw = localStorage.getItem(storageKey);
     /* Новый посетитель: стартовый фасад из админки («Настройка страниц» → «Сайдинг») */
@@ -120,7 +125,7 @@ function loadInput(storageKey: string = TEST_STORAGE_KEY): SidingInput {
         rightEdge: start.rightEdge,
         /* Режим «Один цвет» отключён — кнопка на странице «Тест» убрана */
         singleColor: false,
-        openings: DEFAULT_SIDING.openings.map((o) => clampOpening(o, start.facadeLength, start.facadeHeight)),
+        openings: defaultOpenings.map((o) => clampOpening(o, start.facadeLength, start.facadeHeight)),
       });
     }
     const parsed = JSON.parse(raw) as Partial<SidingInput>;
@@ -133,14 +138,14 @@ function loadInput(storageKey: string = TEST_STORAGE_KEY): SidingInput {
         typeof parsed.sparePct === "number" && parsed.sparePct >= 0 && parsed.sparePct <= 50
           ? parsed.sparePct
           : DEFAULT_SIDING.sparePct,
-      openings: Array.isArray(parsed.openings) ? parsed.openings : DEFAULT_SIDING.openings,
+      openings: Array.isArray(parsed.openings) ? parsed.openings : defaultOpenings,
       colorId: getSidingPanelColor(String(parsed.colorId ?? "")).id,
       trimColors: normalizeTrimColors(parsed.trimColors),
       /* Режим «Один цвет» отключён — кнопка на странице «Тест» убрана */
       singleColor: false,
     };
   } catch {
-    return DEFAULT_SIDING;
+    return { ...DEFAULT_SIDING, openings: defaultOpenings };
   }
 }
 
@@ -583,6 +588,85 @@ function savePerTypeStore(store: PerTypeStore, storageKey: string = PER_TYPE_STO
 
 export type SidingCalculatorVariant = "test" | "siding";
 
+/* БЛОК: Отличия страницы «Тест» от страницы «Сайдинг» (VARIANT_FEATURES)
+ * ЗА ЧТО ОТВЕЧАЕТ: Один и тот же калькулятор работает на двух страницах. Здесь перечислено, чем они отличаются:
+ *   defaultOpenings — стартовый фасад с окном и дверью (true) или пустой, без проёмов (false);
+ *   centerPlacement — показывать ли кнопку «От центра» в «Смещении H профиля»;
+ *   stickyPlan — закреплять ли блок «План фасада» при прокрутке, пока листается левая колонка с настройками
+ *     (блоки «Раскрой панелей», «Итого материалы» и «Спецификация» при этом идут ниже на всю ширину).
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Задано прямо здесь.
+ * КАК ИЗМЕНИТЬ: Чтобы перенести новинку со страницы «Тест» на страницу «Сайдинг», поменяйте нужное значение
+ *   в строке siding на такое же, как в строке test. */
+const VARIANT_FEATURES: Record<
+  SidingCalculatorVariant,
+  { defaultOpenings: boolean; centerPlacement: boolean; stickyPlan: boolean }
+> = {
+  test: { defaultOpenings: false, centerPlacement: true, stickyPlan: true },
+  siding: { defaultOpenings: true, centerPlacement: false, stickyPlan: false },
+};
+
+/* БЛОК: Одноразовая очистка сохранённых проёмов на странице «Тест» (clearSavedTestOpenings)
+ * ЗА ЧТО ОТВЕЧАЕТ: Стандартный фасад на странице «Тест» теперь без окон и дверей. Чтобы это увидели и те,
+ *   кто открывал страницу раньше, сохранённые в браузере окна и двери один раз убираются у всех типов фасада.
+ *   Размеры, цвета и остальные настройки остаются; проёмы, добавленные после этого, сохраняются как обычно.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Ключи памяти страницы в localStorage ("test:siding-input", "test:per-type");
+ *   отметка о выполненной очистке — ключ "test:openings-cleared".
+ * КАК ИЗМЕНИТЬ: Чтобы очистка повторилась у всех посетителей, увеличьте OPENINGS_CLEARED_VERSION на 1. */
+const OPENINGS_CLEARED_KEY = "test:openings-cleared";
+const OPENINGS_CLEARED_VERSION = 1;
+
+function clearSavedTestOpenings(storage: { input: string; perType: string }): void {
+  try {
+    if (Number(localStorage.getItem(OPENINGS_CLEARED_KEY)) >= OPENINGS_CLEARED_VERSION) return;
+
+    const savedInput: unknown = JSON.parse(localStorage.getItem(storage.input) ?? "null");
+    if (savedInput && typeof savedInput === "object") {
+      localStorage.setItem(storage.input, JSON.stringify({ ...savedInput, openings: [] }));
+    }
+
+    const savedTypes: unknown = JSON.parse(localStorage.getItem(storage.perType) ?? "null");
+    if (savedTypes && typeof savedTypes === "object") {
+      const cleaned = Object.fromEntries(
+        Object.entries(savedTypes as Record<string, { input?: unknown } | null>).map(([type, snapshot]) => [
+          type,
+          snapshot && typeof snapshot === "object" && snapshot.input && typeof snapshot.input === "object"
+            ? { ...snapshot, input: { ...snapshot.input, openings: [] } }
+            : snapshot,
+        ]),
+      );
+      localStorage.setItem(storage.perType, JSON.stringify(cleaned));
+    }
+
+    localStorage.setItem(OPENINGS_CLEARED_KEY, String(OPENINGS_CLEARED_VERSION));
+  } catch {}
+}
+
+/* БЛОК: Необязательная обёртка (OptionalDiv)
+ * ЗА ЧТО ОТВЕЧАЕТ: Оборачивает содержимое в <div> только там, где это нужно конкретной странице. Так страница
+ *   «Тест» получает свою раскладку (закреплённый план, результаты на всю ширину), а разметка страницы «Сайдинг»
+ *   остаётся в точности прежней.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Условие when и оформление className/style от места вызова.
+ * КАК ИЗМЕНИТЬ: Не требуется. */
+function OptionalDiv({
+  when,
+  className,
+  style,
+  children,
+}: {
+  when: boolean;
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+}) {
+  return when ? (
+    <div className={className} style={style}>
+      {children}
+    </div>
+  ) : (
+    <>{children}</>
+  );
+}
+
 const CALCULATOR_STORAGE: Record<SidingCalculatorVariant, { input: string; perType: string; facade: string; planView: string; house: string }> = {
   test: {
     input: "test:siding-input",
@@ -608,8 +692,31 @@ export default function TestSidingCalculator({
   variant?: SidingCalculatorVariant;
 }) {
   const storage = CALCULATOR_STORAGE[variant];
-  const [input, setInput] = useState<SidingInput>(() => loadInput(storage.input));
+  const features = VARIANT_FEATURES[variant];
+  const [input, setInput] = useState<SidingInput>(() => {
+    /* Страница «Тест»: до чтения памяти один раз убираем сохранённые ранее окна и двери */
+    if (!features.defaultOpenings) clearSavedTestOpenings(storage);
+    return loadInput(storage.input, features.defaultOpenings);
+  });
   const [facadeSettings, setFacadeSettings] = useState<TestFacadeSettings>(() => loadTestFacade(storage.facade));
+
+  /* БЛОК: Отступ закреплённого «Плана фасада» от верха экрана (planStickyTop)
+   * ЗА ЧТО ОТВЕЧАЕТ: Измеряет настоящую высоту шапки сайта (она меняется на телефоне и при выключенной бегущей
+   *   строке), чтобы закреплённый план вставал ровно под шапкой с зазором 12 px и не прятался под неё.
+   * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Элемент <header> страницы; правила закрепления — класс .plan-sticky в src/index.css.
+   * КАК ИЗМЕНИТЬ: Зазор под шапкой — число PLAN_STICKY_GAP ниже. */
+  const PLAN_STICKY_GAP = 12;
+  const [planStickyTop, setPlanStickyTop] = useState(140 + PLAN_STICKY_GAP);
+  useEffect(() => {
+    if (!features.stickyPlan) return;
+    const header = document.querySelector("header");
+    if (!header) return;
+    const update = () => setPlanStickyTop(Math.round(header.getBoundingClientRect().height) + PLAN_STICKY_GAP);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, [features.stickyPlan]);
   const [printError, setPrintError] = useState(false);
   const [planZoomed, setPlanZoomed] = useState(false);
   /* Режим блока «План фасада»: «Сторона 1» — обычный план фасада, «3D вид» — изометрия, «Вид сверху» — план с редактируемыми размерами дома */
@@ -734,7 +841,8 @@ export default function TestSidingCalculator({
         };
         return {
           ...withColors,
-          openings: [clampOpening(win, L, H), clampOpening(door, L, H)],
+          /* Страница «Тест»: стандартный фасад без окон и дверей (features.defaultOpenings = false) */
+          openings: features.defaultOpenings ? [clampOpening(win, L, H), clampOpening(door, L, H)] : [],
         };
       });
     }
@@ -753,7 +861,11 @@ export default function TestSidingCalculator({
         x: Math.round(Math.max(0, (w - 1) / 2) * 100) / 100,
         y: 0.3,
       };
-      setInput((previous) => ({ ...previous, openings: [g ? clampGableOpening(base, g, base) : base] }));
+      /* Страница «Тест»: стандартный фронтон без окна (features.defaultOpenings = false) */
+      setInput((previous) => ({
+        ...previous,
+        openings: features.defaultOpenings ? [g ? clampGableOpening(base, g, base) : base] : [],
+      }));
     }
     setPlanView("side1");
   };
@@ -1337,14 +1449,29 @@ export default function TestSidingCalculator({
           </motion.div>
 
           {/* БЛОК: Правая колонка — план фасада, список проёмов, раскрой и спецификация | ЗА ЧТО ОТВЕЧАЕТ: Показывает все результаты расчёта | ОТКУДА ДАННЫЕ: Объект calc из calcSiding() | КАК ИЗМЕНИТЬ: Каждый блок подписан ниже */}
-          <div className="min-w-0 space-y-5">
+          {/* Страница «Сайдинг»: одна правая колонка, как раньше. Страница «Тест» (features.stickyPlan): план стоит
+              в своей ячейке во всю высоту левой колонки и закрепляется под шапкой, а «Раскрой панелей»,
+              «Итого материалы» и «Спецификация» идут ниже на всю ширину, чтобы не наезжать на закреплённый план */}
+          <OptionalDiv when={!features.stickyPlan} className="min-w-0 space-y-5">
+          <OptionalDiv when={features.stickyPlan} className="min-w-0 lg:self-stretch">
+          <OptionalDiv
+            when={features.stickyPlan}
+            className="plan-sticky"
+            style={{ "--plan-sticky-top": `${planStickyTop}px` } as CSSProperties}
+          >
             {/* БЛОК: Карточка «План фасада» с печатью, кликом на весь экран и списком проёмов | ЗА ЧТО ОТВЕЧАЕТ: Рисует схему стены и выводит под ней точные размеры и отступы всех проёмов от четырёх краёв фасада | ОТКУДА ДАННЫЕ: FacadeScheme и calc.openings | КАК ИЗМЕНИТЬ: Печатный шаблон настраивается в src/utils/printSidingLayout.ts */}
             <motion.div
               initial={{ opacity: 0, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1, ease }}
             >
-              <div className="overflow-hidden rounded-2xl border border-line bg-white">
+              <div
+                className={cn(
+                  "overflow-hidden rounded-2xl border border-line bg-white",
+                  features.stickyPlan && "plan-sticky-card thin-scroll",
+                )}
+                data-testid="facade-plan-card"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-2.5 lg:px-5">
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2 text-[13px] font-extrabold">
@@ -1374,12 +1501,14 @@ export default function TestSidingCalculator({
                   </div>
                 </div>
 
-                {/* БЛОК: Смещение H-профиля | ЗА ЧТО ОТВЕЧАЕТ: Четыре независимых варианта, активен ровно один:
-                    «Самый выгодный» (автоподбор), «Симметрично» (зеркально), «Слева»/«Справа» (целые планки от края) */}
+                {/* БЛОК: Смещение H-профиля | ЗА ЧТО ОТВЕЧАЕТ: Независимые варианты, активен ровно один:
+                    «Самый выгодный» (автоподбор), «Симметрично» (зеркально), «Слева»/«Справа» (целые планки от края);
+                    на странице «Тест» после «Симметрично» есть ещё «От центра» (H-профиль ровно по центру фасада) */}
                 <HProfilePlacementControl
                   value={facadeSettings.hPlacement}
                   seams={seamPositions}
                   onChange={setHPlacement}
+                  options={features.centerPlacement ? TEST_H_PROFILE_PLACEMENTS : undefined}
                 />
 
                 {planView !== "side1" && <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5 lg:px-5" role="tablist" aria-label="Вид дома">
@@ -1492,7 +1621,11 @@ export default function TestSidingCalculator({
 
               </div>
             </motion.div>
+          </OptionalDiv>
+          </OptionalDiv>
 
+          {/* Страница «Тест»: результаты расчёта отдельным блоком на всю ширину под калькулятором и планом */}
+          <OptionalDiv when={features.stickyPlan} className="min-w-0 space-y-5 lg:col-span-2">
             {/* БЛОК: Ведомость «Раскрой панелей» со сворачиванием | ЗА ЧТО ОТВЕЧАЕТ: Перечисляет панели, обрезки которых использованы повторно; по умолчанию свёрнута, разворачивается кнопкой справа | ОТКУДА ДАННЫЕ: Массив calc.panelPlan из src/data/siding.ts | КАК ИЗМЕНИТЬ: Стартовое состояние задаётся в useState(false) у cutPlanOpen */}
             {(() => {
               const reusedCount = cuttingDetails.length;
@@ -1666,7 +1799,8 @@ export default function TestSidingCalculator({
                 </table>
               </div>
             </motion.div>
-          </div>
+          </OptionalDiv>
+          </OptionalDiv>
         </div>
       </div>
 
