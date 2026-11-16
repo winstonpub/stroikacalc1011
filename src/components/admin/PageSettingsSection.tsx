@@ -486,16 +486,6 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
     </label>
   );
 
-  const colorField = (label: string, value: string, onChange: (v: string) => void) => (
-    <label className="flex items-center justify-between gap-2 text-[12px] font-bold text-graphite/70">
-      {label}
-      <span className="flex items-center gap-2">
-        <span className="tabular text-[11px] text-graphite/50">{value.toUpperCase()}</span>
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="h-7 w-10 cursor-pointer rounded border border-line bg-white" />
-      </span>
-    </label>
-  );
-
   const placementEditor = (where: "header" | "footer", title: string, previewBg: string) => {
     const place = logo[where];
     const aligns: { id: LogoAlign; label: string }[] = [
@@ -548,7 +538,6 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
             {range("Высота", Math.min(Math.max(place.height, minH), maxH), minH, maxH, "px", (v) => setPlace(where, { height: v }))}
             {range("Сдвиг по горизонтали", place.offsetX, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, "px", (v) => setPlace(where, { offsetX: v }))}
             {range("Сдвиг по вертикали", place.offsetY, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, "px", (v) => setPlace(where, { offsetY: v }))}
-            {colorField("Цвет надписи «Челябинск»", place.cityColor, (v) => setPlace(where, { cityColor: v }))}
           </div>
           <div>
             <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-graphite/45">Предпросмотр</div>
@@ -563,7 +552,7 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
             >
               {place.visible ? (
                 <span style={{ transform: `translate(${place.offsetX}px, ${place.offsetY}px)` }}>
-                  <LogoComponent height={Math.min(Math.max(place.height, minH), maxH)} cityColor={place.cityColor} />
+                  <LogoComponent height={Math.min(Math.max(place.height, minH), maxH)} />
                 </span>
               ) : (
                 <span className="text-[12px] font-semibold text-white/50">Логотип скрыт</span>
@@ -1135,7 +1124,7 @@ function renderPageBlocks(
   if (route === "#/test") {
     return (
       <div className="rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-[13.5px] font-semibold text-graphite/50">
-        На странице «Тест» временно отображается заглушка. Калькулятор доступен на странице «Сайдинг».
+        Страница «Тест» является копией страницы «Сайдинг» (со своей отдельной памятью расчёта) и использует общие стартовые настройки вкладки «Сайдинг».
       </div>
     );
   }

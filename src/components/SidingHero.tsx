@@ -15,7 +15,13 @@ const ease = [0.22, 1, 0.36, 1] as const;
  * ЗА ЧТО ОТВЕЧАЕТ: Выводит баннер раздела сайдинга и обновляет надпись «Сегодня»/«Завтра» по часам Челябинска.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Хук useChelyabinskDelivery() и функция прокрутки onStart.
  * КАК ИЗМЕНИТЬ: Отредактируйте тексты в секциях ниже. */
-export default function SidingHero({ onStart }: { onStart: () => void }) {
+export default function SidingHero({
+  onStart,
+  featuresHref = "#/siding#features",
+}: {
+  onStart: () => void;
+  featuresHref?: string;
+}) {
   const deliveryDay = useChelyabinskDelivery();
 
   return (
@@ -71,7 +77,7 @@ export default function SidingHero({ onStart }: { onStart: () => void }) {
               <ArrowRight size={19} strokeWidth={2.6} className="transition-transform group-hover:translate-x-0.5" />
             </button>
             <a
-              href="#/siding#features"
+              href={featuresHref}
               className="inline-flex h-[52px] items-center gap-2 rounded-2xl border border-white/20 px-6 text-[15px] font-bold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
             >
               О сайдинге

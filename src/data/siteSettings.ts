@@ -365,12 +365,12 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     },
   },
   logo: {
-    header: { visible: true, height: 68, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
-    footer: { visible: true, height: 140, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
+    header: { visible: true, height: 60, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
+    footer: { visible: true, height: 100, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
     favicon: { background: "#20282B", color: "#FFBF2F", radius: 7 },
   },
   defaultsVersion: 2,
-  logoVersion: 2,
+  logoVersion: 3,
 };
 
 /* БЛОК: Проверка, очистка и совместимость настроек со старыми версиями (sanitize)
@@ -510,8 +510,6 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
   };
   const edge = (v: unknown, fallback: SidingEdgeDefault): SidingEdgeDefault =>
     v === "j" || v === "inner" || v === "outer" ? v : fallback;
-  const color = (v: unknown, fallback: string) =>
-    typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : fallback;
   const hasV2Defaults = typeof raw.defaultsVersion === "number" && raw.defaultsVersion >= 2;
   const rr = rawCalc("roof");
   const br = base.calculators.roof;
@@ -576,17 +574,17 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
         cityColor: d.cityColor,
       };
     }
-    const hasV2Logo = typeof raw.logoVersion === "number" && raw.logoVersion >= 2;
+    const hasV3Logo = typeof raw.logoVersion === "number" && raw.logoVersion >= 3;
     const isFooter = d === base.logo.footer;
     const minH = isFooter ? LOGO_FOOTER_HEIGHT_MIN : LOGO_HEIGHT_MIN;
     const maxH = isFooter ? LOGO_FOOTER_HEIGHT_MAX : LOGO_HEIGHT_MAX;
     return {
       visible: typeof o.visible === "boolean" ? o.visible : d.visible,
-      height: hasV2Logo ? num(o.height, d.height, minH, maxH, 0) : d.height,
+      height: hasV3Logo ? num(o.height, d.height, minH, maxH, 0) : d.height,
       align: o.align === "left" || o.align === "center" || o.align === "right" ? o.align : d.align,
-      offsetX: num(o.offsetX, d.offsetX, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, 0),
-      offsetY: num(o.offsetY, d.offsetY, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, 0),
-      cityColor: color(o.cityColor, d.cityColor),
+      offsetX: hasV3Logo ? num(o.offsetX, d.offsetX, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, 0) : d.offsetX,
+      offsetY: hasV3Logo ? num(o.offsetY, d.offsetY, -LOGO_OFFSET_MAX, LOGO_OFFSET_MAX, 0) : d.offsetY,
+      cityColor: d.cityColor,
     };
   };
   const logoSettings: LogoSettings = {
@@ -687,7 +685,7 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
     },
     logo: logoSettings,
     defaultsVersion: 2,
-    logoVersion: 2,
+    logoVersion: 3,
     knownSheetIds: Array.from(new Set([...known, ...defaultIds])),
     knownMenuIds: Array.from(new Set([...knownMenu, ...base.menu.map((item) => item.id)])),
     knownFooterLinkIds: Array.from(new Set([...knownFooterLinks, ...base.footer.links.map((item) => item.id)])),

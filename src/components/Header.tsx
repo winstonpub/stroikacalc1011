@@ -8,10 +8,21 @@
  *   — Чтобы изменить адрес магазина в правой части верхней полосы, отредактируйте STORE в src/data/grilyato.ts.
  * ========================================================================= */
 
-import { useEffect, useRef, useState } from "react";
-import { MapPin, Truck, Store, Calculator, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  MapPin,
+  Truck,
+  Store,
+  Calculator,
+  ChevronDown,
+  SlidersHorizontal,
+  Grid3X3,
+  Layers3,
+  House,
+  Rows3,
+} from "lucide-react";
 import { STORE } from "../data/grilyato";
-import { useSiteSettings } from "../data/siteSettings";
+import { useSiteSettings, type MenuItem } from "../data/siteSettings";
 import { isAdminUnlocked, subscribeAdminSession } from "../utils/adminSession";
 import { cn } from "../utils/cn";
 
@@ -41,18 +52,18 @@ function LogoIconPaths() {
   );
 }
 
-function LogoWordmarkPaths({ cityColor = "#ffffff" }: { cityColor?: string }) {
+function LogoWordmarkPaths() {
   return (
     <>
-      <path fill={cityColor} d="M0 0H235V197C235 265 267 289 330 289C375 289 420 276 465 250V0H700V700H465V470C411 492 347 507 281 507C99 507 0 406 0 214Z" transform="translate(0.649 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M621.18 510.44L621.18 699.62L0 699.62L0 0L608.47 0L608.47 189.18L241.84 189.18L241.84 259.41L568.41 259.41L568.41 430.44L241.84 430.44L241.84 510.44Z" transform="translate(32.949 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M733.97 0L733.97 699.73L490.77 699.73L490.77 195.29L348.88 195.29L346.77 267.58C344.79 333.66 340.28 394.67 333.38 448.78C326.48 503.31 314.64 550.94 298.01 590.39C281.11 630.55 257.01 658.03 226.15 679.73C195.15 701.43 154.71 712.56 106.24 712.56C91.59 712.56 75.67 711.57 59.18 709.6C42.55 707.48 24.66 704.24 6.06 699.59L0 698.04L0 498.24L21.28 502.75C56.78 510.36 81.16 502.47 95.82 477.81C107.65 457.8 115.82 430.18 120.33 395.66C124.84 360.3 127.8 320 129.07 275.89L138.23 0Z" transform="translate(62.089 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M378.7 0L735 0L498.46 233.09L378.7 233.09C344.96 233.09 317.53 260.53 317.53 294.26C317.53 327.99 344.97 355.39 378.7 355.39L498.46 355.39L498.46 233.09L731.09 233.09L731.09 699.82L498.46 699.82L498.46 588.03L378.7 588.03C216.66 588.03 84.87 456.25 84.87 294.26C84.87 132.28 216.66 0 378.7 0ZM286 700L0 700L210 394L440 406Z" transform="translate(95.749 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M0 0H230V280H395C596 280 700 351 700 489C700 627 596 700 395 700H0ZM230 455V525H375C425 525 455 516 455 490C455 464 425 455 375 455ZM0 0h645v205h-645Z" transform="translate(129.449 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M0 0L230 0 230 350 470 0 700 0 700 700 470 700 470 350 230 700 0 700Z" transform="translate(161.749 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M714.41 0V699.85H473.06V438.84H241.49V699.85H0V0H241.49V241.2H473.06V0Z" transform="translate(194.049 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M628 89L464 253C438 227 405 214 365 214C283 214 218 275 218 350C218 425 283 486 365 486C405 486 438 473 464 447L628 611C560 680 468 720 365 720C159 720 -10 554 -10 350C-10 146 159 -20 365 -20C468 -20 560 20 628 89Z" transform="translate(226.909 0.000) scale(0.04)" />
-      <path fill={cityColor} d="M0 0L230 0 230 272 430 0 715 0 441 334 744 700 440 700 230 424 230 700 0 700Z" transform="translate(256.809 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M0 0H235V197C235 265 267 289 330 289C375 289 420 276 465 250V0H700V700H465V470C411 492 347 507 281 507C99 507 0 406 0 214Z" transform="translate(0.649 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M621.18 510.44L621.18 699.62L0 699.62L0 0L608.47 0L608.47 189.18L241.84 189.18L241.84 259.41L568.41 259.41L568.41 430.44L241.84 430.44L241.84 510.44Z" transform="translate(32.949 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M733.97 0L733.97 699.73L490.77 699.73L490.77 195.29L348.88 195.29L346.77 267.58C344.79 333.66 340.28 394.67 333.38 448.78C326.48 503.31 314.64 550.94 298.01 590.39C281.11 630.55 257.01 658.03 226.15 679.73C195.15 701.43 154.71 712.56 106.24 712.56C91.59 712.56 75.67 711.57 59.18 709.6C42.55 707.48 24.66 704.24 6.06 699.59L0 698.04L0 498.24L21.28 502.75C56.78 510.36 81.16 502.47 95.82 477.81C107.65 457.8 115.82 430.18 120.33 395.66C124.84 360.3 127.8 320 129.07 275.89L138.23 0Z" transform="translate(62.089 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M378.7 0L735 0L498.46 233.09L378.7 233.09C344.96 233.09 317.53 260.53 317.53 294.26C317.53 327.99 344.97 355.39 378.7 355.39L498.46 355.39L498.46 233.09L731.09 233.09L731.09 699.82L498.46 699.82L498.46 588.03L378.7 588.03C216.66 588.03 84.87 456.25 84.87 294.26C84.87 132.28 216.66 0 378.7 0ZM286 700L0 700L210 394L440 406Z" transform="translate(95.749 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M0 0H230V280H395C596 280 700 351 700 489C700 627 596 700 395 700H0ZM230 455V525H375C425 525 455 516 455 490C455 464 425 455 375 455ZM0 0h645v205h-645Z" transform="translate(129.449 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M0 0L230 0 230 350 470 0 700 0 700 700 470 700 470 350 230 700 0 700Z" transform="translate(161.749 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M714.41 0V699.85H473.06V438.84H241.49V699.85H0V0H241.49V241.2H473.06V0Z" transform="translate(194.049 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M628 89L464 253C438 227 405 214 365 214C283 214 218 275 218 350C218 425 283 486 365 486C405 486 438 473 464 447L628 611C560 680 468 720 365 720C159 720 -10 554 -10 350C-10 146 159 -20 365 -20C468 -20 560 20 628 89Z" transform="translate(226.909 0.000) scale(0.04)" />
+      <path fill="#ffffff" d="M0 0L230 0 230 272 430 0 715 0 441 334 744 700 440 700 230 424 230 700 0 700Z" transform="translate(256.809 0.000) scale(0.04)" />
       <path fill="#e0a800" d="M628 89L464 253C438 227 405 214 365 214C283 214 218 275 218 350C218 425 283 486 365 486C405 486 438 473 464 447L628 611C560 680 468 720 365 720C159 720 -10 554 -10 350C-10 146 159 -20 365 -20C468 -20 560 20 628 89Z" transform="translate(0.000 44.000) scale(0.053)" />
       <path fill="#e0a800" d="M0 0L700 0 700 224 468 224 468 700 232 700 232 224 0 224Z" transform="translate(38.630 44.000) scale(0.053)" />
       <path fill="#e0a800" d="M356.3 0C518.34 0 650.13 132.28 650.13 294.26C650.13 456.25 518.34 588.03 356.3 588.03L236.54 588.03L236.54 699.82L3.91 699.82L3.91 233.09L236.54 233.09L236.54 355.39L356.3 355.39C390.03 355.39 417.47 327.99 417.47 294.26C417.47 260.53 390.04 233.09 356.3 233.09L236.54 233.09L0 0L356.3 0Z" transform="translate(80.440 44.000) scale(0.053)" />
@@ -65,12 +76,10 @@ function LogoWordmarkPaths({ cityColor = "#ffffff" }: { cityColor?: string }) {
 }
 
 export function LogoMark({
-  height = 68,
-  cityColor = "#FFFFFF",
+  height = 60,
   className,
 }: {
   height?: number;
-  cityColor?: string;
   className?: string;
 }) {
   return (
@@ -88,7 +97,7 @@ export function LogoMark({
           <LogoIconPaths />
         </g>
         <g transform="translate(116 26) scale(1)">
-          <LogoWordmarkPaths cityColor={cityColor} />
+          <LogoWordmarkPaths />
         </g>
       </g>
     </svg>
@@ -96,12 +105,10 @@ export function LogoMark({
 }
 
 export function FooterLogoMark({
-  height = 140,
-  cityColor = "#FFFFFF",
+  height = 100,
   className,
 }: {
   height?: number;
-  cityColor?: string;
   className?: string;
 }) {
   return (
@@ -119,7 +126,7 @@ export function FooterLogoMark({
           <LogoIconPaths />
         </g>
         <g transform="translate(0 172) scale(1)">
-          <LogoWordmarkPaths cityColor={cityColor} />
+          <LogoWordmarkPaths />
         </g>
       </g>
     </svg>
@@ -239,6 +246,211 @@ function HeaderSnow() {
   );
 }
 
+/* БЛОК: Логотип-ссылка и отдельная кнопка раскрывающегося списка разделов (BrandLogoMenu)
+ * ЗА ЧТО ОТВЕЧАЕТ: Выводит в шапке самостоятельную ссылку-логотип (ведёт только на главную #/)
+ *   и рядом с ней отдельную жёлтую круглую кнопку-шеврон, раскрывающую список калькуляторов (без главной).
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Список menuItems из настроек шапки (src/data/siteSettings.ts), текущий маршрут route — из Header.
+ * КАК ИЗМЕНИТЬ: Подзаголовки и иконки разделов настраиваются в словаре BRAND_MENU_META ниже. */
+const BRAND_MENU_META: Record<string, { subtitle: string; icon: ReactNode }> = {
+  "/grilyato": { subtitle: "Ячеистый потолок", icon: <Grid3X3 size={16} strokeWidth={2.2} /> },
+  "/armstrong": { subtitle: "Модульный потолок", icon: <Layers3 size={16} strokeWidth={2.2} /> },
+  "/roof": { subtitle: "Листовая кровля", icon: <House size={16} strokeWidth={2.2} /> },
+  "/siding": { subtitle: "Обшивка фасада", icon: <Rows3 size={16} strokeWidth={2.2} /> },
+  "/test": { subtitle: "Обшивка фасада", icon: <Rows3 size={16} strokeWidth={2.2} /> },
+};
+
+function BrandLogoMenu({
+  route,
+  menuItems,
+  logo,
+  adminUnlocked,
+}: {
+  route: string;
+  menuItems: MenuItem[];
+  logo: { height: number; align: "left" | "center" | "right"; offsetX: number; offsetY: number };
+  adminUnlocked: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+
+  const pages = [
+    ...menuItems
+      .filter((item) => {
+        const path = item.href.replace(/^#/, "").split("#")[0] || "/";
+        return path !== "/";
+      })
+      .map((item) => {
+        const path = item.href.replace(/^#/, "").split("#")[0] || "/";
+        const meta = BRAND_MENU_META[path];
+        return {
+          id: item.id,
+          label: item.label,
+          href: item.href,
+          subtitle: meta?.subtitle ?? "Калькулятор",
+          icon: meta?.icon ?? <Calculator size={16} strokeWidth={2.2} />,
+        };
+      }),
+    ...(adminUnlocked
+      ? [
+          {
+            id: "admin",
+            label: "Администрирование",
+            href: "#/admin",
+            subtitle: "Панель управления",
+            icon: <SlidersHorizontal size={16} strokeWidth={2.2} />,
+          },
+        ]
+      : []),
+  ];
+
+  const isActive = (href: string) => {
+    const path = href.replace(/^#/, "").split("#")[0] || "/";
+    return path !== "/" && route.startsWith(path);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const activeIndex = Math.max(
+      0,
+      pages.findIndex((p) => isActive(p.href)),
+    );
+    itemRefs.current[activeIndex]?.focus();
+  }, [open]);
+
+  const onMenuKeyDown = (e: React.KeyboardEvent) => {
+    const items = itemRefs.current.filter(Boolean) as HTMLAnchorElement[];
+    if (!items.length) return;
+    const i = items.indexOf(document.activeElement as HTMLAnchorElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      items[(i + 1) % items.length]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      items[(i - 1 + items.length) % items.length]?.focus();
+    }
+  };
+
+  return (
+    <div
+      ref={rootRef}
+      className={cn("relative flex items-center shrink-0", logo.align === "right" && "order-3")}
+      style={{ transform: `translate(${logo.offsetX}px, ${logo.offsetY}px)` }}
+    >
+      <a
+        href="#/"
+        aria-label="Челябинск Стройка — на главную"
+        className="group flex items-center shrink-0 rounded-[10px] py-0.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c400]"
+      >
+        <LogoMark
+          height={Math.min(logo.height, 88)}
+          className="transition-transform group-hover:scale-[1.03]"
+        />
+      </a>
+
+      {pages.length > 0 && (
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label="Разделы сайта"
+          title="Разделы сайта"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className={cn(
+            "relative z-10 -ml-1.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-[#f5c400] text-[#20282b] cursor-pointer transition-all duration-150 hover:bg-pro-soft hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-graphite",
+            open && "ring-2 ring-white/85",
+          )}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 10 6"
+            width="10"
+            height="6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={cn("transition-transform duration-200", open && "rotate-180")}
+          >
+            <path d="M1 1l4 4 4-4" />
+          </svg>
+        </button>
+      )}
+
+      {open && pages.length > 0 && (
+        <div
+          role="menu"
+          aria-label="Разделы"
+          onKeyDown={onMenuKeyDown}
+          className={cn(
+            "absolute top-[calc(100%+10px)] z-50 w-[280px] overflow-hidden rounded-2xl border border-[#e4e2da] bg-white p-1.5 text-graphite shadow-[0_18px_40px_-12px_rgba(29,31,27,0.28)]",
+            logo.align === "right" ? "right-0" : "left-0",
+          )}
+        >
+          <div className="px-3 pb-1.5 pt-2 text-[11px] font-semibold uppercase tracking-wider text-[#9a9a90]">
+            Разделы
+          </div>
+          {pages.map((p, i) => {
+            const active = isActive(p.href);
+            return (
+              <a
+                key={p.id}
+                ref={(el) => {
+                  itemRefs.current[i] = el;
+                }}
+                role="menuitem"
+                aria-current={active ? "page" : undefined}
+                href={p.href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#F5C400]",
+                  active ? "bg-[#FFF8D6]" : "hover:bg-[#f4f3ee]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                    active ? "bg-[#F5C400] text-[#1d1f1b]" : "bg-[#1d1f1b] text-white",
+                  )}
+                >
+                  {p.icon}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-[#1d1f1b]">{p.label}</span>
+                  <span className="block truncate text-xs text-[#7b7c73]">{p.subtitle}</span>
+                </span>
+                {active && <span className="h-2 w-2 shrink-0 rounded-full bg-[#F5C400]" aria-hidden="true" />}
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* БЛОК: Главный компонент шапки сайта (Header)
  * ЗА ЧТО ОТВЕЧАЕТ: Управляет открытием/закрытием выпадающего списка «Калькуляторы» (по клику, клавише Esc и клику вне меню), подсвечивает текущую страницу и отрисовывает все три яруса шапки.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Текущий маршрут route передаётся из src/App.tsx, настройки шапки — из useSiteSettings() (src/data/siteSettings.ts), адрес и город — из STORE (src/data/grilyato.ts).
@@ -251,6 +463,7 @@ export default function Header({ route = "/" }: { route?: string }) {
   const onArmstrong = route.startsWith("/armstrong");
   const onRoof = route.startsWith("/roof");
   const onSiding = route.startsWith("/siding");
+  const onTest = route.startsWith("/test");
 
   /* БЛОК: Слежение за входом в панель «Администрирование»
    * ЗА ЧТО ОТВЕЧАЕТ: Показывает кнопку «Администрирование» сразу после входа в панель и скрывает её после «Заблокировать».
@@ -344,6 +557,9 @@ export default function Header({ route = "/" }: { route?: string }) {
             {onSiding && (
               <a href="#/siding#features" className="hover:text-pro transition-colors">О сайдинге</a>
             )}
+            {onTest && (
+              <a href="#/test#features" className="hover:text-pro transition-colors">О сайдинге</a>
+            )}
 
             {/* БЛОК: Кнопка «Администрирование» для вошедшего администратора | ЗА ЧТО ОТВЕЧАЕТ: Быстрый переход в панель управления; появляется только после ввода пароля на странице #/admin и стоит после всех остальных ссылок строки | ОТКУДА ДАННЫЕ: Признак сессии из src/utils/adminSession.ts | КАК ИЗМЕНИТЬ: Цвет кнопки задают классы bg-pro text-graphite (цвет бегущей строки) */}
             {adminUnlocked && (
@@ -367,31 +583,25 @@ export default function Header({ route = "/" }: { route?: string }) {
         </div>
       </div>
 
-      {/* БЛОК: Центральная графитовая полоса с логотипом и городом | ЗА ЧТО ОТВЕЧАЕТ: Ссылка с логотипом на главную страницу слева и значок геолокации с городом справа | ОТКУДА ДАННЫЕ: Компонент LogoMark выше и STORE.city из src/data/grilyato.ts | КАК ИЗМЕНИТЬ: Размер логотипа меняется в height={54}, город — в STORE.city */}
-      <div className="bg-graphite text-white shadow-[0_8px_30px_rgba(20,25,27,0.25)]">
+      {/* БЛОК: Центральная графитовая полоса с логотипом, кнопкой списка разделов и городом | ЗА ЧТО ОТВЕЧАЕТ: Кнопка с логотипом и раскрывающимся списком разделов слева и значок геолокации с городом справа | ОТКУДА ДАННЫЕ: Компонент BrandLogoMenu выше, menuItems из настроек и STORE.city из src/data/grilyato.ts | КАК ИЗМЕНИТЬ: Размер и положение логотипа меняются в админке */}
+      <div className="relative z-20 bg-graphite text-white shadow-[0_8px_30px_rgba(20,25,27,0.25)]">
         <div className="mx-auto max-w-[1400px] px-4 lg:px-8 h-[68px] flex items-center gap-3 lg:gap-5">
           {/* Положение, размер и цвет логотипа задаются в админке: «Настройка страниц» → «Главная страница» → «Логотип сайта» */}
           {logo.align !== "left" && <div className="flex-1" />}
           {logo.visible && (
-            <a
-              href="#/"
-              className={cn("flex items-center shrink-0 group", logo.align === "right" && "order-3")}
-              aria-label="Челябинск Стройка — на главную"
-              style={{ transform: `translate(${logo.offsetX}px, ${logo.offsetY}px)` }}
-            >
-              <LogoMark
-                height={Math.min(logo.height, 88)}
-                cityColor={logo.cityColor}
-                className="transition-transform group-hover:scale-105"
-              />
-            </a>
+            <BrandLogoMenu
+              route={route}
+              menuItems={menuItems}
+              logo={logo}
+              adminUnlocked={adminUnlocked}
+            />
           )}
 
           <div className={cn("flex-1", logo.align === "right" && "order-2")} />
 
           <button className={cn("hidden sm:flex items-center gap-1 text-[13.5px] font-semibold text-white/85 hover:text-pro transition-colors", logo.align === "right" && "order-1")}>
             <MapPin size={16} strokeWidth={2.3} className="text-pro" />
-            {STORE.city}
+            {STORE.address}
           </button>
 
         </div>

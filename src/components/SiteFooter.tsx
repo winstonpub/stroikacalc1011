@@ -48,7 +48,7 @@ export default function SiteFooter() {
                 aria-label="Челябинск Стройка — на главную"
                 style={{ transform: `translate(${logo.offsetX}px, ${logo.offsetY}px)` }}
               >
-                <FooterLogoMark height={Math.min(logo.height, 200)} cityColor={logo.cityColor} />
+                <FooterLogoMark height={Math.min(logo.height, 200)} />
               </a>
             )}
           </div>
