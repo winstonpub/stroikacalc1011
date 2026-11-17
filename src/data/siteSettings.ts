@@ -166,6 +166,14 @@ export const CALC_SIZE_MIN = 0.1;
 export const CALC_SIZE_MAX = 100;
 export const CALC_SPARE_MAX = 50;
 
+/** Видимость блоков «О …» под калькуляторами. Общая настройка: одинаковая для всех посетителей. */
+export interface AboutVisibility {
+  grilyato: boolean;
+  armstrong: boolean;
+  roof: boolean;
+  siding: boolean;
+}
+
 export interface SiteSettings {
   ticker: {
     speed: number;
@@ -192,6 +200,8 @@ export interface SiteSettings {
   };
   /** Логотипы в шапке и подвале */
   logo: LogoSettings;
+  /** Показ блоков «О …» на страницах калькуляторов (общая настройка для всех посетителей) */
+  aboutVisible: AboutVisibility;
   defaultsVersion?: number;
   logoVersion?: number;
   knownSheetIds?: string[];
@@ -369,6 +379,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     footer: { visible: true, height: 100, align: "left", offsetX: 0, offsetY: 0, cityColor: "#FFFFFF" },
     favicon: { background: "#20282B", color: "#FFBF2F", radius: 7 },
   },
+  aboutVisible: { grilyato: true, armstrong: true, roof: true, siding: true },
   defaultsVersion: 2,
   logoVersion: 3,
 };
@@ -592,6 +603,22 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
     footer: placement(rawLogo.footer, base.logo.footer),
     favicon: base.logo.favicon,
   };
+  /* БЛОК: Видимость блоков «О …» (aboutVisible)
+   * ЗА ЧТО ОТВЕЧАЕТ: Читает флаги показа блоков «О грильято», «О системе Армстронг», «О кровле» и «О сайдинге»
+   *   из общих настроек. Если флага нет (старые сохранённые версии настроек), блок показывается, как и раньше.
+   * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Поле aboutVisible из опубликованной Google-таблицы или из браузера.
+   * КАК ИЗМЕНИТЬ: Не требуется. Переключатели находятся в админке на карточках «Калькулятор · Грильято»,
+   *   «Калькулятор · Армстронг», «Кровля» и «Сайдинг». */
+  const rawAbout = (raw.aboutVisible && typeof raw.aboutVisible === "object" ? raw.aboutVisible : {}) as Partial<
+    Record<keyof AboutVisibility, unknown>
+  >;
+  const aboutFlag = (value: unknown): boolean => (typeof value === "boolean" ? value : true);
+  const aboutVisible: AboutVisibility = {
+    grilyato: aboutFlag(rawAbout.grilyato),
+    armstrong: aboutFlag(rawAbout.armstrong),
+    roof: aboutFlag(rawAbout.roof),
+    siding: aboutFlag(rawAbout.siding),
+  };
 
   const rawCalculators =
     raw.calculators && typeof raw.calculators === "object"
@@ -684,6 +711,7 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
       siding: sidingSettings,
     },
     logo: logoSettings,
+    aboutVisible,
     defaultsVersion: 2,
     logoVersion: 3,
     knownSheetIds: Array.from(new Set([...known, ...defaultIds])),

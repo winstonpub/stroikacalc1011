@@ -50,6 +50,7 @@ import { SIDING_COLORS, SIDING_TRIM_PARTS, getAvailableSidingColors } from "../.
 import { TickerEditor, FooterEditor, NumberField, SheetEditor } from "../../pages/AdminPage";
 import { FooterLogoMark, LogoMark } from "../Header";
 import { cn } from "../../utils/cn";
+import AboutVisibilityToggle from "./AboutVisibilityToggle";
 
 /* Подписи и теги для страниц, у которых есть карточка в блоке «Выберите Калькулятор» на главной.
  * Остальные страницы выводятся в этом же списке, но кнопка «Главная» у них недоступна — карточки на главной у них нет. */
@@ -809,6 +810,11 @@ function renderPageBlocks(
 
     return (
       <div className="grid gap-3.5 xl:grid-cols-1">
+        <AboutVisibilityToggle
+          title={isArmstrong ? "Блок «О системе Армстронг»" : "Блок «О грильято»"}
+          value={settings.aboutVisible[key]}
+          onChange={(next) => update({ ...settings, aboutVisible: { ...settings.aboutVisible, [key]: next } })}
+        />
         <BlockCard
           num={1}
           badge="Калькулятор"
@@ -970,6 +976,11 @@ function renderPageBlocks(
     const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
     return (
       <div className="grid gap-3.5 xl:grid-cols-1">
+        <AboutVisibilityToggle
+          title="Блок «О кровле»"
+          value={settings.aboutVisible.roof}
+          onChange={(next) => update({ ...settings, aboutVisible: { ...settings.aboutVisible, roof: next } })}
+        />
         <BlockCard
           num={1}
           badge="Калькулятор"
@@ -1066,6 +1077,11 @@ function renderPageBlocks(
     );
     return (
       <div className="grid gap-3.5 xl:grid-cols-1">
+        <AboutVisibilityToggle
+          title="Блок «О сайдинге»"
+          value={settings.aboutVisible.siding}
+          onChange={(next) => update({ ...settings, aboutVisible: { ...settings.aboutVisible, siding: next } })}
+        />
         <BlockCard
           num={1}
           badge="Калькулятор"
@@ -1124,7 +1140,7 @@ function renderPageBlocks(
   if (route === "#/test") {
     return (
       <div className="rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-[13.5px] font-semibold text-graphite/50">
-        Страница «Тест» является копией страницы «Сайдинг» (со своей отдельной памятью расчёта) и использует общие стартовые настройки вкладки «Сайдинг».
+        Страница «Тест» является копией страницы «Сайдинг» (со своей отдельной памятью расчёта) и использует общие стартовые настройки вкладки «Сайдинг». Блок «О сайдинге» на этой странице управляется переключателем в карточке «Сайдинг».
       </div>
     );
   }

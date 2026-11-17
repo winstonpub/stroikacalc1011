@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SizeGuide } from "./SizeGuide";
 import SiteFooter from "./SiteFooter";
+import { useSiteSettings } from "../data/siteSettings";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -127,9 +128,11 @@ function SystemBlock() {
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Компоненты SystemBlock и SiteFooter.
  * КАК ИЗМЕНИТЬ: Не требует изменений. */
 export default function Sections() {
+  /* Блок «О системе Грильято» скрывается переключателем в админке; подвал выводится всегда */
+  const aboutVisible = useSiteSettings().aboutVisible.grilyato;
   return (
     <>
-      <SystemBlock />
+      {aboutVisible && <SystemBlock />}
       <SiteFooter />
     </>
   );

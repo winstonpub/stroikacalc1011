@@ -1,6 +1,6 @@
 /* ============================================================================
  * ФАЙЛ: src/components/Header.tsx — Общая шапка сайта и векторный логотип
- * ЗА ЧТО ОТВЕЧАЕТ: Выводит закреплённую вверху экрана трёхслойную шапку: 1) узкую верхнюю полосу с выпадающим меню «Калькуляторы», якорной ссылкой «О системе… / О кровле / О сайдинге» и адресом магазина; 2) основную полосу с логотипом «Челябинск СТРОЙКА» и городом; 3) жёлтую зацикленную бегущую строку.
+ * ЗА ЧТО ОТВЕЧАЕТ: Выводит закреплённую вверху экрана двухслойную шапку: 1) основную полосу с логотипом «Челябинск СТРОЙКА», кнопкой раскрывающегося списка разделов и адресом магазина; 2) жёлтую зацикленную бегущую строку.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Пункты меню «Калькуляторы», скорость и тексты бегущей строки читаются из useSiteSettings() (управляются на странице «Администрирование» #/admin), а адрес и город магазина — из объекта STORE в src/data/grilyato.ts.
  * КАК ИЗМЕНИТЬ:
  *   — Бегущую строку и порядок/видимость кнопок в меню «Калькуляторы» меняйте прямо на странице #/admin без правки кода.
@@ -11,10 +11,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   MapPin,
-  Truck,
-  Store,
   Calculator,
-  ChevronDown,
   SlidersHorizontal,
   Grid3X3,
   Layers3,
@@ -468,18 +465,11 @@ function BrandLogoMenu({
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Текущий маршрут route передаётся из src/App.tsx, настройки шапки — из useSiteSettings() (src/data/siteSettings.ts), адрес и город — из STORE (src/data/grilyato.ts).
  * КАК ИЗМЕНИТЬ: Подписи быстрых якорных ссылок («О системе Грильято», «О системе Армстронг», «О кровле», «О сайдинге») редактируются прямо в блоке <nav> ниже. */
 export default function Header({ route = "/" }: { route?: string }) {
-  const [open, setOpen] = useState(false);
   const [adminUnlocked, setAdminUnlocked] = useState(isAdminUnlocked);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const onGrilyato = route.startsWith("/grilyato");
-  const onArmstrong = route.startsWith("/armstrong");
-  const onRoof = route.startsWith("/roof");
-  const onSiding = route.startsWith("/siding");
-  const onTest = route.startsWith("/test");
 
   /* БЛОК: Слежение за входом в панель «Администрирование»
-   * ЗА ЧТО ОТВЕЧАЕТ: Показывает кнопку «Администрирование» сразу после входа в панель и скрывает её после «Заблокировать».
-   * ОТКУДА БЕРЁТ ИНФОРМАЦИЯ: Признак сессии из src/utils/adminSession.ts (ключ sessionStorage "admin:unlocked"). */
+   * ЗА ЧТО ОТВЕЧАЕТ: Добавляет пункт «Администрирование» в раскрывающийся список у логотипа после входа и скрывает после «Заблокировать».
+   * ОТКУДА БЕРЁТ ИНФОРМАЦИЯ: Признак сессии из src/utils/adminSession.ts. */
   useEffect(() => {
     setAdminUnlocked(isAdminUnlocked());
     return subscribeAdminSession(() => setAdminUnlocked(isAdminUnlocked()));
@@ -494,106 +484,10 @@ export default function Header({ route = "/" }: { route?: string }) {
     tickerItems.map((item) => `${item.id}:${item.text}`).join("|"),
   );
 
-  const isCurrent = (href: string) => {
-    const path = href.replace(/^#/, "").split("#")[0];
-    return path !== "/" && route.startsWith(path);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, [open]);
-
   return (
     <header className="sticky top-0 z-50">
       {/* Декоративный снег поверх шапки; pointer-events:none в CSS не мешает меню и кнопкам */}
       {settings.ticker.snow && <HeaderSnow />}
-
-      {/* БЛОК: Верхняя узкая навигационная полоса | ЗА ЧТО ОТВЕЧАЕТ: Выпадающий список «Калькуляторы», якорная ссылка на описание открытой системы и адрес магазина справа | ОТКУДА ДАННЫЕ: menuItems из настроек админки и STORE.address из src/data/grilyato.ts | КАК ИЗМЕНИТЬ: Список кнопок меню — в #/admin, тексты якорных ссылок и «Доставка и подъём» — прямо здесь */}
-      <div className="hidden md:block bg-ink text-white/70">
-        <div className="mx-auto max-w-[1400px] px-4 lg:px-8 h-9 flex items-center justify-between text-[12.5px]">
-          <nav className="flex items-center gap-5">
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setOpen((v) => !v)}
-                aria-expanded={open}
-                className="flex items-center gap-1.5 text-white/70 hover:text-pro transition-colors"
-              >
-                Калькуляторы
-                <ChevronDown size={14} strokeWidth={2.5}
-                  className={`opacity-60 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
-              </button>
-
-              {open && (
-                <div className="absolute left-0 top-full pt-2 z-50">
-                  <div className="w-64 rounded-2xl bg-white text-graphite shadow-[0_16px_40px_rgba(20,25,27,0.25)] border border-line py-1.5">
-                    {menuItems.map((item) => {
-                      const current = isCurrent(item.href);
-                      return (
-                        <a
-                          key={item.id}
-                          href={item.href}
-                          onClick={() => setOpen(false)}
-                          className={`flex items-center justify-between gap-2 w-full text-left px-4 py-2.5 text-[13.5px] font-semibold transition-colors ${
-                            current ? "bg-pro/25 text-graphite" : "text-graphite/70 hover:bg-pro/20"
-                          }`}
-                        >
-                          {item.label}
-                          {current && <span className="w-1.5 h-1.5 rounded-full bg-graphite shrink-0" />}
-                        </a>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {onGrilyato && (
-              <a href="#/grilyato#features" className="hover:text-pro transition-colors">О системе Грильято</a>
-            )}
-            {onArmstrong && (
-              <a href="#/armstrong#features" className="hover:text-pro transition-colors">О системе Армстронг</a>
-            )}
-            {onRoof && (
-              <a href="#/roof#features" className="hover:text-pro transition-colors">О кровле</a>
-            )}
-            {onSiding && (
-              <a href="#/siding#features" className="hover:text-pro transition-colors">О сайдинге</a>
-            )}
-            {onTest && (
-              <a href="#/test#features" className="hover:text-pro transition-colors">О сайдинге</a>
-            )}
-
-            {/* БЛОК: Кнопка «Администрирование» для вошедшего администратора | ЗА ЧТО ОТВЕЧАЕТ: Быстрый переход в панель управления; появляется только после ввода пароля на странице #/admin и стоит после всех остальных ссылок строки | ОТКУДА ДАННЫЕ: Признак сессии из src/utils/adminSession.ts | КАК ИЗМЕНИТЬ: Цвет кнопки задают классы bg-pro text-graphite (цвет бегущей строки) */}
-            {adminUnlocked && (
-              <a
-                href="#/admin"
-                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg bg-pro px-2.5 text-[12.5px] font-extrabold text-graphite transition-colors hover:bg-pro-soft"
-              >
-                <SlidersHorizontal size={13} strokeWidth={2.5} />
-                Администрирование
-              </a>
-            )}
-          </nav>
-          <div className="flex items-center gap-5">
-            <span className="flex items-center gap-1.5">
-              <Store size={13} strokeWidth={2.2} className="text-pro" /> {STORE.address}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Truck size={13} strokeWidth={2.2} className="text-pro" /> Доставка и подъём
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* БЛОК: Центральная графитовая полоса с логотипом, кнопкой списка разделов и городом | ЗА ЧТО ОТВЕЧАЕТ: Кнопка с логотипом и раскрывающимся списком разделов слева и значок геолокации с городом справа | ОТКУДА ДАННЫЕ: Компонент BrandLogoMenu выше, menuItems из настроек и STORE.city из src/data/grilyato.ts | КАК ИЗМЕНИТЬ: Размер и положение логотипа меняются в админке */}
       <div className="relative z-20 bg-graphite text-white shadow-[0_8px_30px_rgba(20,25,27,0.25)]">

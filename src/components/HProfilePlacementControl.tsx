@@ -25,20 +25,23 @@ export default function HProfilePlacementControl({
   value,
   onChange,
   options = H_PROFILE_PLACEMENTS,
+  dense = false,
 }: {
   value: HProfilePlacement;
   seams?: number[];
   onChange: (value: HProfilePlacement) => void;
   /** Список кнопок: по умолчанию четыре варианта страницы «Сайдинг»; страница «Тест» передаёт список с «От центра» */
   options?: { id: HProfilePlacement; label: string; hint: string }[];
+  /** Уплотнённый вид страницы «Тест»: меньше отступы и высота кнопок */
+  dense?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-2.5 lg:px-5">
+    <div className={cn("flex flex-wrap items-center justify-between border-b border-line", dense ? "gap-x-3 gap-y-1 px-3 py-1.5" : "gap-x-4 gap-y-2 px-4 py-2.5 lg:px-5")}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-graphite/50">
+        <span className={cn("font-extrabold uppercase tracking-wider text-graphite/50", dense ? "text-[10px]" : "text-[11px]")}>
           Смещение H профиля
         </span>
-        <div className="flex flex-wrap items-center gap-1 rounded-xl bg-smoke p-1" role="group" aria-label="Смещение H профиля">
+        <div className={cn("flex flex-wrap items-center rounded-xl bg-smoke", dense ? "gap-0.5 p-0.5" : "gap-1 p-1")} role="group" aria-label="Смещение H профиля">
           {options.map(({ id, label, hint }) => {
             const Icon = PLACEMENT_ICONS[id];
             const active = value === id;
@@ -50,7 +53,9 @@ export default function HProfilePlacementControl({
                 title={hint}
                 onClick={() => onChange(id)}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pro",
+                  dense
+                    ? "inline-flex h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pro"
+                    : "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pro",
                   active
                     ? "bg-graphite text-white shadow-sm"
                     : "text-graphite/60 hover:bg-white hover:text-graphite",

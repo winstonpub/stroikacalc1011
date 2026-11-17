@@ -13,6 +13,7 @@ import {
   Wind,
 } from "lucide-react";
 import SiteFooter from "./SiteFooter";
+import { useSiteSettings } from "../data/siteSettings";
 import RoofTypeGuide from "./RoofTypeGuide";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -136,9 +137,11 @@ function RoofSystemBlock() {
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Из компонентов RoofSystemBlock и SiteFooter.
  * КАК ИЗМЕНИТЬ: Не требует изменений. */
 export default function RoofSections() {
+  /* Блок «О кровле» скрывается переключателем в админке; подвал выводится всегда */
+  const aboutVisible = useSiteSettings().aboutVisible.roof;
   return (
     <>
-      <RoofSystemBlock />
+      {aboutVisible && <RoofSystemBlock />}
       <SiteFooter />
     </>
   );

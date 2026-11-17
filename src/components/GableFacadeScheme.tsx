@@ -12,13 +12,15 @@ import { gableSpanAtHeight, type GableGeometry } from "../data/testFacade";
 const fmt = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 });
 const MONO = "ui-monospace, monospace";
 
-export default function GableFacadeScheme({ calc, input, geometry, seams, svgRef }: {
+export default function GableFacadeScheme({ calc, input, geometry, seams, svgRef, dense = false }: {
   calc: SidingCalc;
   input: SidingInput;
   geometry: GableGeometry;
   /** Позиции вертикальных стыков H-профиля в мм (см. src/data/testFacade.ts) */
   seams: number[];
   svgRef: RefObject<SVGSVGElement | null>;
+  /** Компактный вид: подрезаем пустые поля сверху и снизу у холста чертежа */
+  dense?: boolean;
 }) {
   const baseId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const clipId = `gable-${baseId}`;
@@ -47,10 +49,13 @@ export default function GableFacadeScheme({ calc, input, geometry, seams, svgRef
   const slopes = profile.map((point) => `${x(point.x)},${y(point.y)}`).join(" ");
   const breakPoints = broken ? [profile[1], profile[profile.length - 2]] : [];
   const breakY = wallHeight + breakHeight;
-  const viewTop = Math.max(0, y(totalHeight) - 42);
+  /* В компактном виде пустые поля над коньком и под подписью «основание … м» меньше:
+     чертёж остаётся прежнего масштаба, но карточка плана становится ниже */
+  const viewTop = Math.max(0, y(totalHeight) - (dense ? 24 : 42));
+  const viewBottom = dense ? 434 : 470;
 
   return (
-    <svg ref={svgRef} viewBox={`0 ${viewTop} 680 ${470 - viewTop}`} className="mx-auto block h-auto w-full"
+    <svg ref={svgRef} viewBox={`0 ${viewTop} 680 ${viewBottom - viewTop}`} className="mx-auto block h-auto w-full"
       xmlns="http://www.w3.org/2000/svg" role="img"
       data-seams={seams.join(",")}
       data-facade-mode={geometry.mode} data-gable-shape={geometry.shape}

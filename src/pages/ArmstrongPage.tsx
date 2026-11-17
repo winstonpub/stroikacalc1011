@@ -14,6 +14,7 @@ import SiteFooter from "../components/SiteFooter";
 import Calculator from "../components/Calculator";
 import ArmstrongSystem from "../components/ArmstrongSystem";
 import { SPEC_PRICE_SHEET } from "../data/prices";
+import { useSiteSettings } from "../data/siteSettings";
 import { useChelyabinskDelivery } from "../hooks/useChelyabinskDelivery";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -24,6 +25,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
  * КАК ИЗМЕНИТЬ: Править тексты баннера можно прямо внутри первой <section> ниже. */
 export default function ArmstrongPage() {
   const deliveryDay = useChelyabinskDelivery();
+  const { aboutVisible } = useSiteSettings();
 
   return (
     <>
@@ -75,12 +77,14 @@ export default function ArmstrongPage() {
                 Калькулятор
                 <ArrowRight size={19} strokeWidth={2.6} className="transition-transform group-hover:translate-x-0.5" />
               </a>
-              <a
-                href="#/armstrong#features"
-                className="inline-flex items-center gap-2 h-[52px] px-6 rounded-2xl border border-white/20 text-white/85 font-bold text-[15px] hover:bg-white/10 hover:text-white transition-colors"
-              >
-                О системе Армстронг
-              </a>
+              {aboutVisible.armstrong && (
+                <a
+                  href="#/armstrong#features"
+                  className="inline-flex items-center gap-2 h-[52px] px-6 rounded-2xl border border-white/20 text-white/85 font-bold text-[15px] hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  О системе Армстронг
+                </a>
+              )}
             </motion.div>
           </div>
 
@@ -115,7 +119,7 @@ export default function ArmstrongPage() {
       />
 
       {/* БЛОК: Описание системы и подробные карточки плит, профилей и углов | ЗА ЧТО ОТВЕЧАЕТ: Раздел #features с карточками и кнопками быстрого выбора материала в калькулятор | ОТКУДА ДАННЫЕ: src/components/ArmstrongSystem.tsx | КАК ИЗМЕНИТЬ: Откройте src/components/ArmstrongSystem.tsx */}
-      <ArmstrongSystem />
+      {aboutVisible.armstrong && <ArmstrongSystem />}
 
       {/* БЛОК: Подвал сайта | ЗА ЧТО ОТВЕЧАЕТ: Логотип, ссылки, информация о магазине и кнопка «Настройка» | ОТКУДА ДАННЫЕ: src/components/SiteFooter.tsx | КАК ИЗМЕНИТЬ: В «Администрировании» (#/admin) */}
       <SiteFooter />

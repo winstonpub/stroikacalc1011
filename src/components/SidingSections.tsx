@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { SIDING_ELEMENTS } from "../data/siding";
 import SiteFooter from "./SiteFooter";
+import { useSiteSettings } from "../data/siteSettings";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -191,9 +192,11 @@ function SidingSystemBlock() {
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Компоненты SidingSystemBlock и SiteFooter.
  * КАК ИЗМЕНИТЬ: Не требует изменений. */
 export default function SidingSections() {
+  /* Блок «О сайдинге» скрывается переключателем в админке; подвал выводится всегда */
+  const aboutVisible = useSiteSettings().aboutVisible.siding;
   return (
     <>
-      <SidingSystemBlock />
+      {aboutVisible && <SidingSystemBlock />}
       <SiteFooter />
     </>
   );

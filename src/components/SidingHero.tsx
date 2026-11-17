@@ -8,6 +8,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Layers, Scissors, Truck } from "lucide-react";
 import { useChelyabinskDelivery } from "../hooks/useChelyabinskDelivery";
+import { useSiteSettings } from "../data/siteSettings";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -23,6 +24,7 @@ export default function SidingHero({
   featuresHref?: string;
 }) {
   const deliveryDay = useChelyabinskDelivery();
+  const aboutVisible = useSiteSettings().aboutVisible.siding;
 
   return (
     <section id="top" className="relative overflow-hidden bg-graphite text-white">
@@ -76,12 +78,14 @@ export default function SidingHero({
               Калькулятор
               <ArrowRight size={19} strokeWidth={2.6} className="transition-transform group-hover:translate-x-0.5" />
             </button>
-            <a
-              href={featuresHref}
-              className="inline-flex h-[52px] items-center gap-2 rounded-2xl border border-white/20 px-6 text-[15px] font-bold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              О сайдинге
-            </a>
+            {aboutVisible && (
+              <a
+                href={featuresHref}
+                className="inline-flex h-[52px] items-center gap-2 rounded-2xl border border-white/20 px-6 text-[15px] font-bold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                О сайдинге
+              </a>
+            )}
           </motion.div>
         </div>
 

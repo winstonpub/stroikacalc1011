@@ -256,17 +256,26 @@ input.no-spin {
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Отступ от верха экрана --plan-sticky-top (высота шапки + зазор) передаёт
  *   src/components/TestSidingCalculator.tsx.
  * КАК ИЗМЕНИТЬ: Запас под заголовок и кнопки карточки — число 200px; наименьшая высота чертежа — 240px. */
+/* БЛОК: Уплотнённая таблица спецификации в компактном виде (.calc-dense)
+ * ЗА ЧТО ОТВЕЧАЕТ: В компактном виде строки сметы тоньше, поэтому на экране помещается больше позиций.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Класс calc-dense ставится на секцию калькулятора в
+ *   src/components/TestSidingCalculator.tsx, когда на странице «Тест» выбран компактный вид.
+ * КАК ИЗМЕНИТЬ: Высота строки — значения padding-top / padding-bottom ниже. */
+.calc-dense [data-testid="test-facade-specification"] th,
+.calc-dense [data-testid="test-facade-specification"] td {
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
 @media (min-width: 1024px) {
   .plan-sticky {
     position: sticky;
     top: var(--plan-sticky-top, 152px);
-  }
-  .plan-sticky-card {
     max-height: calc(100vh - var(--plan-sticky-top, 152px) - 12px);
     overflow-y: auto;
   }
   .plan-sticky-card #plan-panel-side1 svg {
-    max-height: max(240px, calc(100vh - var(--plan-sticky-top, 152px) - 200px));
+    max-height: max(220px, calc(100vh - var(--plan-sticky-top, 152px) - 240px));
   }
 }
 
