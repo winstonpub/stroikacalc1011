@@ -13,6 +13,9 @@
 export interface RoofLayoutPrintData {
   roofLength: number;
   roofWidth: number;
+  roofArea?: number;
+  shapeLabel?: string;
+  roofSummary?: string;
   sheetLength: number;
   sheetWidth: number;
   overlapW: number;
@@ -210,8 +213,8 @@ export function buildRoofSheetMarkup(
 
     <div class="params">
       <div class="param">
-        <span>Кровля</span>
-        <b>${fmt2.format(calc.roofLength)} × ${fmt2.format(calc.roofWidth)} м</b>
+        <span>${calc.shapeLabel && calc.shapeLabel !== "Прямоугольная" ? `Кровля · ${calc.shapeLabel}` : "Кровля"}</span>
+        <b>${calc.roofSummary ?? `${fmt2.format(calc.roofLength)} × ${fmt2.format(calc.roofWidth)} м`}</b>
       </div>
       <div class="param">
         <span>Лист</span>
@@ -238,7 +241,7 @@ export function buildRoofSheetMarkup(
 
     <footer>
       <span>Полос перехлёста: ${fmt.format(calc.seams)}${saved > 0 ? ` · сэкономлено листов за счёт обрезков: ${fmt.format(saved)}` : ""}</span>
-      <span>Полезная площадь: ${fmt2.format(calc.roofLength * calc.roofWidth)} м²</span>
+      <span>Полезная площадь: ${fmt2.format(calc.roofArea ?? calc.roofLength * calc.roofWidth)} м²</span>
     </footer>
   </div>`;
 }

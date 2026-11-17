@@ -610,29 +610,20 @@ const VARIANT_FEATURES: Record<
   { defaultOpenings: boolean; centerPlacement: boolean; stickyPlan: boolean; compact: boolean }
 > = {
   test: { defaultOpenings: false, centerPlacement: true, stickyPlan: true, compact: true },
-  siding: { defaultOpenings: true, centerPlacement: false, stickyPlan: false, compact: false },
+  siding: { defaultOpenings: false, centerPlacement: true, stickyPlan: true, compact: true },
 };
 
-/* БЛОК: Запоминание вида калькулятора (COMPACT_VIEW_KEY)
- * ЗА ЧТО ОТВЕЧАЕТ: Страница «Тест» открывается в компактном виде; переключатель «Подробно» возвращает
- *   прежние просторные отступы. Выбор сохраняется в браузере и не сбрасывается при перезагрузке.
- * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Ключ "test:compact-view" в localStorage.
- * КАК ИЗМЕНИТЬ: Чтобы по умолчанию открывался подробный вид, замените "0" на "1" в выражении ниже. */
-const COMPACT_VIEW_KEY = "test:compact-view";
-
-/* БЛОК: Одноразовая очистка сохранённых проёмов на странице «Тест» (clearSavedTestOpenings)
- * ЗА ЧТО ОТВЕЧАЕТ: Стандартный фасад на странице «Тест» теперь без окон и дверей. Чтобы это увидели и те,
+/* БЛОК: Одноразовая очистка сохранённых проёмов (clearSavedOpenings)
+ * ЗА ЧТО ОТВЕЧАЕТ: Стандартный фасад на страницах «Сайдинг» и «Тест» без окон и дверей. Чтобы это увидели и те,
  *   кто открывал страницу раньше, сохранённые в браузере окна и двери один раз убираются у всех типов фасада.
  *   Размеры, цвета и остальные настройки остаются; проёмы, добавленные после этого, сохраняются как обычно.
- * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Ключи памяти страницы в localStorage ("test:siding-input", "test:per-type");
- *   отметка о выполненной очистке — ключ "test:openings-cleared".
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Ключи памяти страницы в localStorage и свой флаг storage.openingsCleared.
  * КАК ИЗМЕНИТЬ: Чтобы очистка повторилась у всех посетителей, увеличьте OPENINGS_CLEARED_VERSION на 1. */
-const OPENINGS_CLEARED_KEY = "test:openings-cleared";
 const OPENINGS_CLEARED_VERSION = 1;
 
-function clearSavedTestOpenings(storage: { input: string; perType: string }): void {
+function clearSavedOpenings(storage: { input: string; perType: string; openingsCleared: string }): void {
   try {
-    if (Number(localStorage.getItem(OPENINGS_CLEARED_KEY)) >= OPENINGS_CLEARED_VERSION) return;
+    if (Number(localStorage.getItem(storage.openingsCleared)) >= OPENINGS_CLEARED_VERSION) return;
 
     const savedInput: unknown = JSON.parse(localStorage.getItem(storage.input) ?? "null");
     if (savedInput && typeof savedInput === "object") {
@@ -652,7 +643,7 @@ function clearSavedTestOpenings(storage: { input: string; perType: string }): vo
       localStorage.setItem(storage.perType, JSON.stringify(cleaned));
     }
 
-    localStorage.setItem(OPENINGS_CLEARED_KEY, String(OPENINGS_CLEARED_VERSION));
+    localStorage.setItem(storage.openingsCleared, String(OPENINGS_CLEARED_VERSION));
   } catch {}
 }
 
@@ -684,13 +675,18 @@ function OptionalDiv({
   );
 }
 
-const CALCULATOR_STORAGE: Record<SidingCalculatorVariant, { input: string; perType: string; facade: string; planView: string; house: string }> = {
+const CALCULATOR_STORAGE: Record<
+  SidingCalculatorVariant,
+  { input: string; perType: string; facade: string; planView: string; house: string; compactView: string; openingsCleared: string }
+> = {
   test: {
     input: "test:siding-input",
     perType: "test:per-type",
     facade: "test:facade-shape",
     planView: "test:plan-view",
     house: "test:house-3d",
+    compactView: "test:compact-view",
+    openingsCleared: "test:openings-cleared",
   },
   siding: {
     input: "siding:input",
@@ -698,6 +694,8 @@ const CALCULATOR_STORAGE: Record<SidingCalculatorVariant, { input: string; perTy
     facade: "siding:facade-shape",
     planView: "siding:plan-view",
     house: "siding:house-3d",
+    compactView: "siding:compact-view",
+    openingsCleared: "siding:openings-cleared",
   },
 };
 
@@ -713,13 +711,12 @@ export default function TestSidingCalculator({
 
   /* БЛОК: Текущий вид калькулятора (compactView, dense, dc)
    * ЗА ЧТО ОТВЕЧАЕТ: compactView — выбор пользователя («Компактно» / «Подробно»), dense — включён ли
-   *   уплотнённый вид именно сейчас (только страница «Тест»), dc — помощник, который подставляет
-   *   компактные классы отступов вместо обычных. Страница «Сайдинг» всегда получает обычные классы.
-   * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: localStorage "test:compact-view" и VARIANT_FEATURES выше.
+   *   уплотнённый вид именно сейчас, dc — помощник, который подставляет компактные классы отступов.
+   * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: localStorage (storage.compactView) и VARIANT_FEATURES выше.
    * КАК ИЗМЕНИТЬ: Значения отступов и размеров — в парах классов dc("обычный", "компактный") в разметке ниже. */
   const [compactView, setCompactView] = useState(() => {
     try {
-      return localStorage.getItem(COMPACT_VIEW_KEY) !== "0";
+      return localStorage.getItem(storage.compactView) !== "0";
     } catch {
       return true;
     }
@@ -727,14 +724,14 @@ export default function TestSidingCalculator({
   useEffect(() => {
     if (!features.compact) return;
     try {
-      localStorage.setItem(COMPACT_VIEW_KEY, compactView ? "1" : "0");
+      localStorage.setItem(storage.compactView, compactView ? "1" : "0");
     } catch {}
-  }, [features.compact, compactView]);
+  }, [features.compact, compactView, storage.compactView]);
   const dense = features.compact && compactView;
   const dc = (normal: string, compact: string) => (dense ? compact : normal);
   const [input, setInput] = useState<SidingInput>(() => {
-    /* Страница «Тест»: до чтения памяти один раз убираем сохранённые ранее окна и двери */
-    if (!features.defaultOpenings) clearSavedTestOpenings(storage);
+    /* До чтения памяти один раз убираем сохранённые ранее стандартные окна и двери */
+    if (!features.defaultOpenings) clearSavedOpenings(storage);
     return loadInput(storage.input, features.defaultOpenings);
   });
   const [facadeSettings, setFacadeSettings] = useState<TestFacadeSettings>(() => loadTestFacade(storage.facade));

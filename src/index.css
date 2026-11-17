@@ -261,8 +261,15 @@ input.no-spin {
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Класс calc-dense ставится на секцию калькулятора в
  *   src/components/TestSidingCalculator.tsx, когда на странице «Тест» выбран компактный вид.
  * КАК ИЗМЕНИТЬ: Высота строки — значения padding-top / padding-bottom ниже. */
-.calc-dense [data-testid="test-facade-specification"] th,
-.calc-dense [data-testid="test-facade-specification"] td {
+.calc-dense [data-testid$="facade-specification"] th,
+.calc-dense [data-testid$="facade-specification"] td {
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+/* Компактные таблицы калькуляторов Грильято, Армстронга и Кровли: строки тоньше, как на «Сайдинге» */
+.calc-dense table th,
+.calc-dense table td {
   padding-top: 0.45rem;
   padding-bottom: 0.45rem;
 }

@@ -38,15 +38,16 @@ import {
 import { loadArmstrongSetup, loadCalcInput, saveArmstrongSetup, saveCalcInput } from "../utils/calcStorage";
 import { useSiteSettings, type CalcOption } from "../data/siteSettings";
 import { cn } from "../utils/cn";
+import { CompactViewToggle, useCompactView } from "./CalculatorCompactToggle";
 
 /* БЛОК: Поле ввода длины и ширины помещения (DimensionField)
  * ЗА ЧТО ОТВЕЧАЕТ: Позволяет вводить дробные метры как через запятую, так и через точку и мгновенно передаёт положительное число в расчёт.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Текущее значение value и подпись label из родительского компонента Calculator.
  * КАК ИЗМЕНИТЬ: Ширина поля ввода задаётся классом w-[120px]. */
 function DimensionField(props: {
-  label: string; value: number; unit: string; onChange: (v: number) => void;
+  label: string; value: number; unit: string; onChange: (v: number) => void; compact?: boolean;
 }) {
-  const { label, value, unit, onChange } = props;
+  const { label, value, unit, onChange, compact = false } = props;
   const [text, setText] = useState(String(value).replace(".", ","));
   useEffect(() => setText(String(value).replace(".", ",")), [value]);
 
@@ -55,6 +56,28 @@ function DimensionField(props: {
     const v = parseFloat(raw.replace(",", "."));
     if (Number.isFinite(v) && v > 0) onChange(v);
   };
+
+  if (compact) {
+    return (
+      <div>
+        <label className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-graphite/50">
+          <Ruler size={12} strokeWidth={2.4} className="text-graphite/40" />
+          {label}
+        </label>
+        <div className="mt-1 flex items-baseline gap-1">
+          <input
+            value={text}
+            onChange={(e) => commit(e.target.value)}
+            onBlur={() => setText(String(value).replace(".", ","))}
+            inputMode="decimal"
+            aria-label={label}
+            className="no-spin w-full rounded-lg border border-transparent bg-smoke px-2 py-1 text-right text-[15px] font-extrabold tabular outline-none transition-colors focus:border-pro"
+          />
+          <span className="text-[12px] font-semibold text-graphite/50">{unit}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -83,7 +106,7 @@ function DimensionField(props: {
  * ЗА ЧТО ОТВЕЧАЕТ: Показывает квадратное фото выбранной плиты, профиля или угла со стрелками перелистывания (если фото несколько) и полноэкранной галереей по клику.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Массив путей к изображениям images из объектов в src/data/armstrong.ts (файлы лежат в public/images/armstrong/).
  * КАК ИЗМЕНИТЬ: Чтобы добавить новые ракурсы плиты, допишите пути к файлам в массив gallery нужной плиты в src/data/armstrong.ts. */
-function PartImage({ images, caption, label }: { images: string[]; caption: string; label: string }) {
+function PartImage({ images, caption, label, compact = false }: { images: string[]; caption: string; label: string; compact?: boolean }) {
   const [index, setIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const total = Math.max(images.length, 1);
@@ -118,14 +141,17 @@ function PartImage({ images, caption, label }: { images: string[]; caption: stri
 
   return (
     <>
-      <div className="mt-3 overflow-hidden rounded-xl border border-line bg-white">
-        <div className="flex items-stretch gap-2 p-2">
+      <div className={cn("overflow-hidden rounded-xl border border-line bg-white", compact ? "mt-2" : "mt-3")}>
+        <div className={cn("flex items-stretch gap-2", compact ? "p-1.5" : "p-2")}>
           <button
             type="button"
             onClick={() => setZoomed(true)}
             title="Открыть на весь экран"
             aria-label={`Открыть фото на весь экран: ${label}`}
-            className="group relative block w-[132px] shrink-0 cursor-zoom-in overflow-hidden rounded-lg bg-smoke focus:outline-none focus-visible:ring-2 focus-visible:ring-pro"
+            className={cn(
+              "group relative block shrink-0 cursor-zoom-in overflow-hidden rounded-lg bg-smoke focus:outline-none focus-visible:ring-2 focus-visible:ring-pro",
+              compact ? "w-[88px]" : "w-[132px]",
+            )}
           >
             <img
               key={src}
@@ -251,6 +277,7 @@ export default function Calculator({
   background?: "smoke" | "white";
 } = {}) {
   const armstrong = mode === "armstrong";
+  const { compact, setCompact, dc } = useCompactView(armstrong ? "armstrong:compact-view" : "grilyato:compact-view");
   const { prices, status, updatedAt, refreshing, refresh, changed, checkedCount } = usePrices(priceSheet);
 
   /* БЛОК: Настройки калькулятора из админки | ЗА ЧТО ОТВЕЧАЕТ: Стартовые размеры и запас для нового посетителя,
@@ -434,68 +461,82 @@ export default function Calculator({
     <section
       id="calc"
       className={cn(
-        "relative py-14 lg:py-20 scroll-mt-[130px]",
+        dc("relative py-14 lg:py-20 scroll-mt-[130px]", "relative py-5 lg:py-7 scroll-mt-[130px]"),
         background === "white" ? "bg-white" : "bg-smoke",
+        compact && "calc-dense",
       )}
+      data-calculator={armstrong ? "armstrong" : "grilyato"}
     >
       <div className="mx-auto max-w-[1400px] px-4 lg:px-8">
-        {/* БЛОК: Заголовок секции калькулятора | ЗА ЧТО ОТВЕЧАЕТ: Выводит надзаголовок системы и заголовок «Соберите свой потолок» | ОТКУДА ДАННЫЕ: Флаг armstrong | КАК ИЗМЕНИТЬ: Поменяйте текст внутри <h2> или правую подсказку */}
+        {/* БЛОК: Заголовок секции калькулятора и переключатель «Компактно / Подробно» | ЗА ЧТО ОТВЕЧАЕТ: Выводит надзаголовок системы, заголовок «Соберите свой потолок» и кнопку смены вида | ОТКУДА ДАННЫЕ: Флаг armstrong | КАК ИЗМЕНИТЬ: Поменяйте текст внутри <h2> */}
         <motion.div
           initial={{ opacity: 0, y: 26 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-wrap items-end justify-between gap-4 mb-8"
+          className={dc("flex flex-wrap items-end justify-between gap-4 mb-8", "flex flex-wrap items-end justify-between gap-3 mb-4")}
         >
           <div>
-            <div className="text-[12.5px] font-extrabold tracking-[0.18em] uppercase text-graphite/45 mb-2">
+            <div className={dc("text-[12.5px] font-extrabold tracking-[0.18em] uppercase text-graphite/45 mb-2", "text-[11px] font-extrabold tracking-[0.18em] uppercase text-graphite/45 mb-1")}>
               {armstrong ? "Калькулятор · Армстронг" : "Калькулятор · Grigliato"}
             </div>
-            <h2 className="text-[32px] lg:text-[46px] font-black leading-[1.02] tracking-[-0.01em]">
+            <h2 className={dc("text-[32px] lg:text-[46px] font-black leading-[1.02] tracking-[-0.01em]", "text-[24px] lg:text-[30px] font-black leading-[1.05] tracking-[-0.01em]")}>
               Соберите свой потолок
             </h2>
           </div>
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-graphite/55">
-            <Info size={15} strokeWidth={2.3} className="text-graphite/40" />
-            Пересчёт мгновенный — меняйте параметры
+          <div className="flex flex-wrap items-center gap-3">
+            {!compact && (
+              <div className="hidden items-center gap-2 text-[13px] font-semibold text-graphite/55 sm:flex">
+                <Info size={15} strokeWidth={2.3} className="text-graphite/40" />
+                Пересчёт мгновенный — меняйте параметры
+              </div>
+            )}
+            <CompactViewToggle compact={compact} onToggle={() => setCompact((v) => !v)} />
           </div>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)] gap-5 items-start">
+        <div className={cn("grid lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)] items-start", dc("gap-5", "gap-3"))}>
           {/* БЛОК: Левая панель параметров помещения и выбора материалов | ЗА ЧТО ОТВЕЧАЕТ: Ввод длины/ширины, карточки площади/периметра, переключатели комплектующих, подвеса и ползунок запаса | ОТКУДА ДАННЫЕ: Справочники src/data/grilyato.ts и src/data/armstrong.ts | КАК ИЗМЕНИТЬ: Состав вариантов меняется в файлах src/data/, подписи полей — здесь */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-3xl bg-white border border-line p-5 lg:p-6 shadow-[0_2px_20px_rgba(20,25,27,0.05)] space-y-7"
+            className={dc(
+              "rounded-3xl bg-white border border-line p-5 lg:p-6 shadow-[0_2px_20px_rgba(20,25,27,0.05)] space-y-7",
+              "rounded-2xl bg-white border border-line p-3 lg:p-4 shadow-[0_2px_20px_rgba(20,25,27,0.05)] space-y-3.5",
+            )}
           >
-            <div className="space-y-5">
-              <DimensionField label="Длина помещения" unit="м"
-                value={input.length} onChange={(v) => set("length", v)} />
-              <DimensionField label="Ширина помещения" unit="м"
-                value={input.width} onChange={(v) => set("width", v)} />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-smoke px-3.5 py-2.5">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-graphite/45">Площадь</div>
-                  <div className="text-[19px] font-black tabular">{fmt1(res.area)} м²</div>
+            <div className={dc("space-y-5", "space-y-2")}>
+              <div className={cn(compact && "grid grid-cols-2 gap-x-3")}>
+                <DimensionField compact={compact} label="Длина помещения" unit="м"
+                  value={input.length} onChange={(v) => set("length", v)} />
+                <div className={compact ? "mt-0" : "mt-5"}>
+                  <DimensionField compact={compact} label="Ширина помещения" unit="м"
+                    value={input.width} onChange={(v) => set("width", v)} />
                 </div>
-                <div className="rounded-xl bg-smoke px-3.5 py-2.5">
+              </div>
+              <div className={dc("grid grid-cols-2 gap-3", "grid grid-cols-2 gap-2")}>
+                <div className={dc("rounded-xl bg-smoke px-3.5 py-2.5", "rounded-lg bg-smoke px-2.5 py-1.5")}>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-graphite/45">Площадь</div>
+                  <div className={dc("text-[19px] font-black tabular", "text-[16px] font-black tabular")}>{fmt1(res.area)} м²</div>
+                </div>
+                <div className={dc("rounded-xl bg-smoke px-3.5 py-2.5", "rounded-lg bg-smoke px-2.5 py-1.5")}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-graphite/45">Периметр</div>
-                  <div className="text-[19px] font-black tabular">{fmt1(res.perimeter)} м</div>
+                  <div className={dc("text-[19px] font-black tabular", "text-[16px] font-black tabular")}>{fmt1(res.perimeter)} м</div>
                 </div>
               </div>
             </div>
 
             {armstrong ? (
-              <div className="space-y-5">
+              <div className={dc("space-y-5", "space-y-2.5")}>
                 {/* БЛОК: Выбор потолочной плиты Армстронг | ЗА ЧТО ОТВЕЧАЕТ: Кнопки 8 видов плит и миниатюра фото | ОТКУДА ДАННЫЕ: ARMSTRONG_TILES из src/data/armstrong.ts | КАК ИЗМЕНИТЬ: Добавляйте или правьте плиты в src/data/armstrong.ts */}
                 <div>
-                  <div className="text-[12.5px] font-bold text-graphite/60 mb-2 flex items-center gap-1.5">
+                  <div className={dc("text-[12.5px] font-bold text-graphite/60 mb-2 flex items-center gap-1.5", "text-[11.5px] font-bold text-graphite/60 mb-1.5 flex items-center gap-1.5")}>
                     <LayoutGrid size={14} strokeWidth={2.2} className="text-graphite/40" aria-hidden="true" />
                     Плита
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className={dc("grid grid-cols-3 gap-2", "grid grid-cols-3 gap-1.5")}>
                     {tileOptions.map((tile) => (
                       <button
                         key={tile.id}
@@ -504,7 +545,7 @@ export default function Calculator({
                         title={tile.label}
                         aria-pressed={tileId === tile.id}
                         className={cn(
-                          "group rounded-xl border px-1.5 py-2 text-center text-[12px] font-extrabold tabular transition-all",
+                          dc("group rounded-xl border px-1.5 py-2 text-center text-[12px] font-extrabold tabular transition-all", "group rounded-lg border px-1 py-1.5 text-center text-[11px] font-extrabold tabular transition-all"),
                           tileId === tile.id
                             ? "border-graphite bg-graphite text-white shadow-[0_4px_14px_rgba(20,25,27,0.25)]"
                             : "border-line bg-white hover:border-graphite/40"
@@ -515,6 +556,7 @@ export default function Calculator({
                     ))}
                   </div>
                   <PartImage
+                    compact={compact}
                     images={selectedTile.gallery ?? [selectedTile.image]}
                     caption="Плита"
                     label={selectedTile.label}
@@ -528,11 +570,11 @@ export default function Calculator({
 
                 {/* БЛОК: Выбор Т-профиля Армстронг («Премиум» / «Эконом») | ЗА ЧТО ОТВЕЧАЕТ: Переключатель серии направляющих и фото | ОТКУДА ДАННЫЕ: ARMSTRONG_PROFILES из src/data/armstrong.ts | КАК ИЗМЕНИТЬ: В src/data/armstrong.ts */}
                 <div>
-                  <div className="text-[12.5px] font-bold text-graphite/60 mb-2 flex items-center gap-1.5">
+                  <div className={dc("text-[12.5px] font-bold text-graphite/60 mb-2 flex items-center gap-1.5", "text-[11.5px] font-bold text-graphite/60 mb-1.5 flex items-center gap-1.5")}>
                     <Ruler size={14} strokeWidth={2.2} className="text-graphite/40" aria-hidden="true" />
                     Профиль
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={dc("grid grid-cols-2 gap-2", "grid grid-cols-2 gap-1.5")}>
                     {profileOptions.map((profile) => (
                       <button
                         key={profile.id}
@@ -540,7 +582,7 @@ export default function Calculator({
                         onClick={() => setProfileId(profile.id)}
                         aria-pressed={profileId === profile.id}
                         className={cn(
-                          "rounded-xl border px-1.5 py-2 text-center text-[12px] font-extrabold transition-all",
+                          dc("rounded-xl border px-1.5 py-2 text-center text-[12px] font-extrabold transition-all", "rounded-lg border px-1 py-1.5 text-center text-[11px] font-extrabold transition-all"),
                           profileId === profile.id
                             ? "border-graphite bg-graphite text-white shadow-[0_4px_14px_rgba(20,25,27,0.25)]"
                             : "border-line bg-white hover:border-graphite/40"
@@ -550,7 +592,7 @@ export default function Calculator({
                       </button>
                     ))}
                   </div>
-                  <PartImage images={[selectedProfile.image]} caption="Профиль" label={selectedProfile.label} />
+                  <PartImage compact={compact} images={[selectedProfile.image]} caption="Профиль" label={selectedProfile.label} />
                   {!selectedProfile.arts.main37 && (
                     <p className="mt-2 text-[12px] text-graphite/60" role="status">
                       Для профиля «{selectedProfile.label}» нет артикулов в таблице — его позиции не включены в итог.
@@ -560,11 +602,11 @@ export default function Calculator({
 
                 {/* БЛОК: Выбор пристенного угла Армстронг («Сталь» / «Алюминий») | ЗА ЧТО ОТВЕЧАЕТ: Переключатель периметрального уголка и фото | ОТКУДА ДАННЫЕ: ARMSTRONG_ANGLES из src/data/armstrong.ts | КАК ИЗМЕНИТЬ: В src/data/armstrong.ts */}
                 <div>
-                  <div className="text-[12.5px] font-bold text-graphite/60 mb-2 flex items-center gap-1.5">
+                  <div className={dc("text-[12.5px] font-bold text-graphite/60 mb-2 flex items-center gap-1.5", "text-[11.5px] font-bold text-graphite/60 mb-1.5 flex items-center gap-1.5")}>
                     <CornerDownRight size={14} strokeWidth={2.2} className="text-graphite/40" aria-hidden="true" />
                     Угол
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={dc("grid grid-cols-2 gap-2", "grid grid-cols-2 gap-1.5")}>
                     {angleOptions.map((angle) => (
                       <button
                         key={angle.id}
@@ -572,7 +614,7 @@ export default function Calculator({
                         onClick={() => setAngleId(angle.id)}
                         aria-pressed={angleId === angle.id}
                         className={cn(
-                          "rounded-xl border px-1.5 py-2 text-center text-[12px] font-extrabold transition-all",
+                          dc("rounded-xl border px-1.5 py-2 text-center text-[12px] font-extrabold transition-all", "rounded-lg border px-1 py-1.5 text-center text-[11px] font-extrabold transition-all"),
                           angleId === angle.id
                             ? "border-graphite bg-graphite text-white shadow-[0_4px_14px_rgba(20,25,27,0.25)]"
                             : "border-line bg-white hover:border-graphite/40"
@@ -582,7 +624,7 @@ export default function Calculator({
                       </button>
                     ))}
                   </div>
-                  <PartImage images={[selectedAngle.image]} caption="Угол" label={selectedAngle.label} />
+                  <PartImage compact={compact} images={[selectedAngle.image]} caption="Угол" label={selectedAngle.label} />
                   {!selectedAngle.art && (
                     <p className="mt-2 text-[12px] text-graphite/60" role="status">
                       Для угла «{selectedAngle.label}» нет артикула в таблице — позиция не включена в итог.
@@ -598,11 +640,11 @@ export default function Calculator({
             <>
             {/* БЛОК: Выбор размера ячейки Грильято и превью чертежа | ЗА ЧТО ОТВЕЧАЕТ: Кнопки 50×50, 75×75, 100×100 и кликабельная схема кассеты | ОТКУДА ДАННЫЕ: CELL_SIZES из src/data/grilyato.ts и CellSchemePreview.tsx | КАК ИЗМЕНИТЬ: В src/data/grilyato.ts и src/components/CellScheme.tsx */}
             <div>
-              <div className="text-[13px] font-bold text-graphite/70 mb-2.5 flex items-center gap-1.5">
+              <div className={dc("text-[13px] font-bold text-graphite/70 mb-2.5 flex items-center gap-1.5", "text-[11.5px] font-bold text-graphite/70 mb-1.5 flex items-center gap-1.5")}>
                 <SquarePen size={14} strokeWidth={2.4} className="text-graphite/40" />
                 Размер ячейки, мм
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className={dc("grid grid-cols-3 gap-2", "grid grid-cols-3 gap-1.5")}>
                 {cellOptions.map((c) => {
                   const active = input.cellMm === c.mm;
                   return (
@@ -611,13 +653,13 @@ export default function Calculator({
                       onClick={() => set("cellMm", c.mm)}
                       title={c.note}
                       className={cn(
-                        "group rounded-xl border px-1.5 py-2 text-center transition-all",
+                        dc("group rounded-xl border px-1.5 py-2 text-center transition-all", "group rounded-lg border px-1 py-1.5 text-center transition-all"),
                         active
                           ? "border-graphite bg-graphite text-white shadow-[0_4px_14px_rgba(20,25,27,0.25)]"
                           : "border-line bg-white hover:border-graphite/40"
                       )}
                     >
-                      <svg viewBox="0 0 36 20" className="w-full h-5 mb-1" aria-hidden>
+                      <svg viewBox="0 0 36 20" className={cn("mb-1 w-full", compact ? "h-4" : "h-5")} aria-hidden>
                         <defs>
                           <pattern id={`cp-${c.mm}`} width={c.mm / 8 + 3} height="20" patternUnits="userSpaceOnUse">
                             <line x1="0" y1="0" x2="0" y2="20"
@@ -638,18 +680,18 @@ export default function Calculator({
                 label={`${res.cell.label} мм`}
               />
 
-              <div className="mt-2 text-[12px] text-graphite/50 font-medium">
+              <div className={dc("mt-2 text-[12px] text-graphite/50 font-medium", "mt-1 text-[11px] text-graphite/50 font-medium")}>
                 {res.cell.note}
               </div>
             </div>
 
             {/* БЛОК: Выбор цвета профилей Грильято | ЗА ЧТО ОТВЕЧАЕТ: Кнопки «Черный», «Белый», «Металлик» с кодами RAL | ОТКУДА ДАННЫЕ: COLORS из src/data/grilyato.ts | КАК ИЗМЕНИТЬ: В массиве COLORS в src/data/grilyato.ts */}
             <div>
-              <div className="text-[13px] font-bold text-graphite/70 mb-2.5 flex items-center gap-1.5">
+              <div className={dc("text-[13px] font-bold text-graphite/70 mb-2.5 flex items-center gap-1.5", "text-[11.5px] font-bold text-graphite/70 mb-1.5 flex items-center gap-1.5")}>
                 <Palette size={14} strokeWidth={2.4} className="text-graphite/40" />
                 Цвет профилей
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className={dc("grid grid-cols-3 gap-2", "grid grid-cols-3 gap-1.5")}>
                 {colorOptions.map((c) => {
                   const active = input.colorId === c.id;
                   return (
@@ -657,14 +699,14 @@ export default function Calculator({
                       key={c.id}
                       onClick={() => set("colorId", c.id)}
                       className={cn(
-                        "rounded-xl border py-2.5 flex flex-col items-center gap-1.5 transition-all",
+                        dc("rounded-xl border py-2.5 flex flex-col items-center gap-1.5 transition-all", "rounded-lg border py-1.5 flex flex-col items-center gap-1 transition-all"),
                         active ? "border-graphite bg-smoke" : "border-line hover:border-graphite/40"
                       )}
                     >
                       <span
                         className={cn(
-                          "w-7 h-7 rounded-full border border-graphite/15 transition-transform",
-                          active && "scale-110 ring-[3px] ring-pro"
+                          dc("w-7 h-7 rounded-full border border-graphite/15 transition-transform", "w-6 h-6 rounded-full border border-graphite/15 transition-transform"),
+                          active && (compact ? "scale-110 ring-2 ring-pro" : "scale-110 ring-[3px] ring-pro")
                         )}
                         style={{ background: c.hex }}
                       />
@@ -680,11 +722,11 @@ export default function Calculator({
 
             {/* БЛОК: Выбор длины подвеса | ЗА ЧТО ОТВЕЧАЕТ: 4 кнопки длины подвеса (275, 500, 1000, 1500 мм) | ОТКУДА ДАННЫЕ: HANGERS из src/data/grilyato.ts | КАК ИЗМЕНИТЬ: Отредактируйте массив HANGERS в src/data/grilyato.ts */}
             <div>
-              <div className="text-[13px] font-bold text-graphite/70 mb-2.5 flex items-center gap-1.5">
+              <div className={dc("text-[13px] font-bold text-graphite/70 mb-2.5 flex items-center gap-1.5", "text-[11.5px] font-bold text-graphite/70 mb-1.5 flex items-center gap-1.5")}>
                 <MoveVertical size={14} strokeWidth={2.4} className="text-graphite/40" />
                 Длина подвеса (запотолочное пространство)
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className={dc("grid grid-cols-4 gap-2", "grid grid-cols-4 gap-1.5")}>
                 {hangerOptions.map((h) => {
                   const active = input.hangerLen === h.len;
                   return (
@@ -692,7 +734,7 @@ export default function Calculator({
                       key={h.len}
                       onClick={() => set("hangerLen", h.len)}
                       className={cn(
-                        "rounded-xl border py-2 text-center transition-all",
+                        dc("rounded-xl border py-2 text-center transition-all", "rounded-lg border py-1.5 text-center transition-all"),
                         active
                           ? "border-graphite bg-graphite text-white"
                           : "border-line bg-white hover:border-graphite/40"
@@ -708,7 +750,7 @@ export default function Calculator({
 
             {/* БЛОК: Ползунок и поле ввода запаса (%) | ЗА ЧТО ОТВЕЧАЕТ: Добавляет процент запаса ко всем позициям расчёта (ползунок 0–20%, ручной ввод до 50%) | ОТКУДА ДАННЫЕ: Поле input.sparePct | КАК ИЗМЕНИТЬ: Диапазон ползунка меняется в max={20} и формуле (input.sparePct / 20) * 100 */}
             <div>
-              <div className="text-[13px] font-bold text-graphite/70 mb-2 flex items-center gap-1.5">
+              <div className={dc("text-[13px] font-bold text-graphite/70 mb-2 flex items-center gap-1.5", "text-[11.5px] font-bold text-graphite/70 mb-1 flex items-center gap-1.5")}>
                 <PackagePlus size={14} strokeWidth={2.4} className="text-graphite/40" />
                 Запас
               </div>
@@ -732,20 +774,20 @@ export default function Calculator({
                   <span className="text-[13px] font-bold text-graphite/50">%</span>
                 </div>
               </div>
-              <div className="mt-2 text-[12px] text-graphite/50 font-medium">
+              <div className={dc("mt-2 text-[12px] text-graphite/50 font-medium", "mt-1 text-[11px] text-graphite/50 font-medium")}>
                 Добавляется к количеству всего рассчитываемого товара
               </div>
             </div>
           </motion.div>
 
           {/* БЛОК: Правая колонка с итоговой карточкой и таблицей спецификации | ЗА ЧТО ОТВЕЧАЕТ: Показывает общую сумму сметы, цену за 1 м² и полный перечень товаров с артикулами и ценами | ОТКУДА ДАННЫЕ: Результат res из calcGrilyato / calcArmstrong | КАК ИЗМЕНИТЬ: Подписи показателей меняются внутри соответствующих карточек ниже */}
-          <div className="space-y-5 min-w-0">
+          <div className={dc("space-y-5 min-w-0", "space-y-3 min-w-0")}>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className={cn("grid gap-5 items-stretch", showPlan && "xl:grid-cols-[minmax(0,1fr)_320px]")}
+              className={cn("grid items-stretch", dc("gap-5", "gap-3"), showPlan && "xl:grid-cols-[minmax(0,1fr)_320px]")}
             >
               {showPlan && (
                 <PlanPreview
@@ -756,15 +798,15 @@ export default function Calculator({
               )}
 
               {/* БЛОК: Тёмная карточка «Итого материалы» | ЗА ЧТО ОТВЕЧАЕТ: Крупная анимированная сумма в рублях, цена за м², число позиций и выбранная конфигурация | ОТКУДА ДАННЫЕ: totalShown и поля объекта res | КАК ИЗМЕНИТЬ: Поменяйте подписи строк внутри блока */}
-              <div className="rounded-2xl bg-graphite text-white p-5 flex flex-col justify-between shadow-[0_16px_40px_rgba(20,25,27,0.35)] relative overflow-hidden">
+              <div className={dc("rounded-2xl bg-graphite text-white p-5 flex flex-col justify-between shadow-[0_16px_40px_rgba(20,25,27,0.35)] relative overflow-hidden", "rounded-xl bg-graphite text-white p-4 flex flex-col justify-between shadow-[0_16px_40px_rgba(20,25,27,0.35)] relative overflow-hidden")}>
                 <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-pro/15 blur-2xl" />
                 <div className={cn("relative", !showPlan && "md:flex md:items-center md:justify-between md:gap-10")}>
                   <div className="shrink-0">
                     <div className="text-[11.5px] font-extrabold tracking-[0.16em] uppercase text-white/50">
                       Итого материалы
                     </div>
-                    <div className="mt-1.5 text-[40px] leading-none font-black text-pro tabular">
-                      {fmt.format(totalShown)} <span className="text-[24px]">₽</span>
+                    <div className={dc("mt-1.5 text-[40px] leading-none font-black text-pro tabular", "mt-1 text-[32px] leading-none font-black text-pro tabular")}>
+                      {fmt.format(totalShown)} <span className={dc("text-[24px]", "text-[20px]")}>₽</span>
                     </div>
                   </div>
                   <div
@@ -818,10 +860,10 @@ export default function Calculator({
               transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
               className="rounded-2xl border border-line bg-white overflow-hidden shadow-[0_2px_20px_rgba(20,25,27,0.04)]"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3 px-4 lg:px-5 py-3.5 border-b border-line">
+              <div className={dc("flex flex-wrap items-center justify-between gap-3 px-4 lg:px-5 py-3.5 border-b border-line", "flex flex-wrap items-center justify-between gap-3 px-3 lg:px-4 py-2.5 border-b border-line")}>
                 <div className="flex items-center gap-2.5">
                   <FileSpreadsheet size={18} strokeWidth={2.3} className="text-graphite/50" />
-                  <span className="text-[15px] font-extrabold">Спецификация материалов</span>
+                  <span className={dc("text-[15px] font-extrabold", "text-[13px] font-extrabold")}>Спецификация материалов</span>
                     {false && null}
                 </div>
                 <div className="flex items-center gap-2">

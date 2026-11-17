@@ -15,6 +15,7 @@ import {
   MoveVertical,
   Ruler,
   RectangleHorizontal,
+  Triangle,
   LayoutGrid,
   Scissors,
   Layers,
@@ -23,8 +24,21 @@ import {
 } from "lucide-react";
 import { fmt, fmt1 } from "../data/grilyato";
 import { loadSettings, useSiteSettings, type SheetPresetItem } from "../data/siteSettings";
+import {
+  ROOF_SHAPE_OPTIONS,
+  buildRoofShapeGeometry,
+  calcShapedRoofLayout,
+  clampTrapezoidParams,
+  clampTriangleParams,
+  createDefaultRoofShapes,
+  type RoofShape,
+  type RoofShapeGeometry,
+  type RoofShapesStore,
+  type ShapedPiece,
+} from "../data/roofShapes";
 import { printRoofLayoutOverlay } from "../utils/printRoofLayout";
 import { cn } from "../utils/cn";
+import { CompactViewToggle, useCompactView } from "./CalculatorCompactToggle";
 
 /* БЛОК: Вспомогательные форматтеры чисел, склонение слов и стартовые размеры кровли (DEFAULT_ROOF)
  * ЗА ЧТО ОТВЕЧАЕТ: Переводит метры в миллиметры, склоняет слово «полоса» в подсказках и задаёт исходный скат 10 × 6 м при открытии калькулятора.
@@ -188,6 +202,7 @@ function RoofField({
   icon: Icon,
   hint,
   locked = false,
+  compact = false,
 }: {
   label: string;
   value: number;
@@ -196,6 +211,7 @@ function RoofField({
   icon: typeof Ruler;
   hint?: string;
   locked?: boolean;
+  compact?: boolean;
 }) {
   const [text, setText] = useState(String(value).replace(".", ","));
   useEffect(() => setText(String(value).replace(".", ",")), [value]);
@@ -205,6 +221,36 @@ function RoofField({
     const parsed = parseFloat(raw.replace(",", "."));
     if (Number.isFinite(parsed) && parsed >= 0) onChange(parsed);
   };
+
+  if (compact) {
+    return (
+      <div>
+        <label className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-graphite/50">
+          <Icon size={12} strokeWidth={2.4} className="text-graphite/40" />
+          {label}
+        </label>
+        <div className="mt-1 flex items-baseline gap-1">
+          <input
+            value={text}
+            onChange={(e) => commit(e.target.value)}
+            onBlur={() => setText(String(value).replace(".", ","))}
+            inputMode="decimal"
+            aria-label={label}
+            readOnly={locked}
+            title={locked ? "Размер зафиксирован выбранным профнастилом" : undefined}
+            className={cn(
+              "no-spin w-full rounded-lg border px-2 py-1 text-right text-[15px] font-extrabold tabular outline-none transition-colors",
+              locked
+                ? "cursor-not-allowed border-line bg-smoke/70 text-graphite/55"
+                : "border-transparent bg-smoke focus:border-pro",
+            )}
+          />
+          <span className="text-[12px] font-semibold text-graphite/50">{unit}</span>
+        </div>
+        {hint && <div className="mt-0.5 text-[10.5px] leading-snug text-graphite/45">{hint}</div>}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -233,6 +279,195 @@ function RoofField({
         </div>
       </div>
       {hint && <div className="mt-1 text-[11.5px] text-graphite/45">{hint}</div>}
+    </div>
+  );
+}
+
+/* БЛОК: Значок трапеции и переключатель «Тип кровли» (TrapezoidIcon, RoofShapeSwitch)
+ * ЗА ЧТО ОТВЕЧАЕТ: Выводит три кнопки «Прямоугольная», «Треугольная», «Трапеция» со значками
+ *   в том же стиле, что переключатель «Тип фасада» на странице «Сайдинг».
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Список ROOF_SHAPE_OPTIONS из src/data/roofShapes.ts.
+ * КАК ИЗМЕНИТЬ: Подписи кнопок — в ROOF_SHAPE_OPTIONS (src/data/roofShapes.ts). */
+function TrapezoidIcon({ size = 13, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M6.5 5h11l4.5 14H2L6.5 5Z" />
+    </svg>
+  );
+}
+
+function RoofShapeSwitch({
+  value,
+  onChange,
+}: {
+  value: RoofShape;
+  onChange: (shape: RoofShape) => void;
+}) {
+  return (
+    <fieldset className="space-y-2.5" aria-label="Тип кровли">
+      <legend className="mb-2.5 text-[12px] font-extrabold uppercase tracking-wider text-graphite/50">
+        Тип кровли
+      </legend>
+      <div className="grid grid-cols-3 gap-1 rounded-xl bg-smoke p-1" role="group" aria-label="Тип кровли">
+        {ROOF_SHAPE_OPTIONS.map((option) => {
+          const active = value === option.id;
+          const iconClass = cn("shrink-0", active ? "text-pro" : "text-graphite/45");
+          return (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(option.id)}
+              className={cn(
+                "inline-flex min-h-8 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-extrabold leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pro",
+                active
+                  ? "bg-graphite text-white shadow-sm"
+                  : "text-graphite/60 hover:bg-white hover:text-graphite",
+              )}
+            >
+              {option.id === "rect" && <RectangleHorizontal size={13} strokeWidth={2.4} className={iconClass} />}
+              {option.id === "triangle" && <Triangle size={13} strokeWidth={2.4} className={iconClass} />}
+              {option.id === "trapezoid" && <TrapezoidIcon size={13} className={iconClass} />}
+              <span>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+/* БЛОК: Бегунок смещения вершины треугольника или основания трапеции (RoofSideInput, RoofOffsetControl)
+ * ЗА ЧТО ОТВЕЧАЕТ: Позволяет задать равнобедренную (кнопка «По центру»), прямоугольную (Слева = 0 или Справа = 0)
+ *   или произвольную несимметричную фигуру ползунком либо точным числом в метрах — как на странице «Сайдинг». */
+function RoofSideInput({
+  label,
+  value,
+  max,
+  disabled,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  disabled?: boolean;
+  onCommit: (v: number) => void;
+}) {
+  const [text, setText] = useState(m2(value));
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) setText(m2(value));
+  }, [value, focused]);
+
+  const commit = (raw: string) => {
+    const parsed = parseFloat(raw.replace(",", "."));
+    if (Number.isFinite(parsed)) {
+      const clamped = Math.min(max, Math.max(0, parsed));
+      onCommit(clamped);
+      return clamped;
+    }
+    return null;
+  };
+
+  return (
+    <span className="flex items-center gap-1">
+      <span>{label}</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={text}
+        disabled={disabled}
+        aria-label={`${label}, метры`}
+        onFocus={() => setFocused(true)}
+        onChange={(e) => {
+          setText(e.target.value);
+          commit(e.target.value);
+        }}
+        onBlur={() => {
+          setFocused(false);
+          const next = commit(text);
+          setText(m2(next ?? value));
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className="no-spin w-[72px] rounded-lg border border-line bg-white px-2.5 py-1 text-right text-[11px] font-bold tabular text-graphite outline-none transition-colors focus:border-pro disabled:opacity-45"
+      />
+      <span>м</span>
+    </span>
+  );
+}
+
+function RoofOffsetControl({
+  caption,
+  span,
+  offset,
+  onOffset,
+}: {
+  caption: string;
+  /** Полный диапазон смещения (для треугольника — основание, для трапеции — |нижнее − верхнее|) */
+  span: number;
+  /** Смещение от центра: -span/2 .. +span/2 */
+  offset: number;
+  onOffset: (next: number) => void;
+}) {
+  const limit = Math.max(0, span / 2);
+  const clamped = Math.min(limit, Math.max(-limit, offset));
+  const left = Math.max(0, limit + clamped);
+  const right = Math.max(0, limit - clamped);
+  const disabled = limit < 0.005;
+  const fill = disabled ? 50 : ((clamped + limit) / (2 * limit)) * 100;
+
+  return (
+    <div>
+      <div className="mb-1 text-[13px] font-bold text-graphite/70">{caption}</div>
+      <input
+        type="range"
+        aria-label={caption}
+        min={-limit}
+        max={limit}
+        step="0.005"
+        value={clamped}
+        disabled={disabled}
+        onChange={(e) => onOffset(Number(e.target.value))}
+        className="pro-range disabled:opacity-45"
+        style={{ "--fill": `${Math.max(0, Math.min(100, fill))}%` } as React.CSSProperties}
+      />
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 text-[11px] font-semibold text-graphite/50">
+        <RoofSideInput
+          label="Слева"
+          value={left}
+          max={span}
+          disabled={disabled}
+          onCommit={(leftMeters) => onOffset(leftMeters - limit)}
+        />
+        <button
+          type="button"
+          onClick={() => onOffset(0)}
+          disabled={disabled || Math.abs(clamped) < 0.005}
+          className="rounded-lg border border-line px-2.5 py-1 text-graphite transition-colors hover:bg-smoke disabled:opacity-40"
+        >
+          По центру
+        </button>
+        <RoofSideInput
+          label="Справа"
+          value={right}
+          max={span}
+          disabled={disabled}
+          onCommit={(rightMeters) => onOffset(limit - rightMeters)}
+        />
+      </div>
     </div>
   );
 }
@@ -950,8 +1185,394 @@ export function RoofLayout({ calc }: { calc: RoofCalc }) {
   );
 }
 
+/* БЛОК: Интерактивная схема укладки листов для треугольной и трапециевидной кровли (ShapedRoofLayout)
+ * ЗА ЧТО ОТВЕЧАЕТ: Рисует контур треугольника или трапеции в масштабе, уложенные листы, пунктирные
+ *   подрезаемые углы снаружи контура, зелёные куски из повторно использованных остатков, жёлтые полосы
+ *   перехлёстов, размерные линии, подсказку при наведении и кнопку «Печать». */
+function ShapedRoofLayout({
+  geometry,
+  shaped,
+  sheetWidth,
+  sheetLength,
+  overlapW,
+  overlapL,
+}: {
+  geometry: RoofShapeGeometry;
+  shaped: ReturnType<typeof calcShapedRoofLayout>;
+  sheetWidth: number;
+  sheetLength: number;
+  overlapW: number;
+  overlapL: number;
+}) {
+  const [hover, setHover] = useState<ShapedPiece | null>(null);
+  const [printError, setPrintError] = useState(false);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const isTrapezoid = geometry.shape === "trapezoid";
+  const VIEW_W = 660;
+  const VIEW_H = 440;
+  const M_LEFT = 62;
+  const M_RIGHT = 24;
+  const M_TOP = isTrapezoid ? 42 : 24;
+  const M_BOTTOM = 48;
+
+  const sceneWm = Math.max(geometry.spanLength, 0.1);
+  const sceneHm = Math.max(geometry.spanWidth, 0.1);
+  const availW = VIEW_W - M_LEFT - M_RIGHT;
+  const availH = VIEW_H - M_TOP - M_BOTTOM;
+  const scale = Math.min(availW / sceneWm, availH / sceneHm);
+
+  const W = geometry.spanLength * scale;
+  const H = geometry.spanWidth * scale;
+  const ox = M_LEFT + (availW - W) / 2;
+  const oy = M_TOP + (availH - H) / 2;
+  const bottom = oy + H;
+
+  const toX = (mmVal: number) => ox + (mmVal / 1000) * scale;
+  const toY = (mmVal: number) => oy + (mmVal / 1000) * scale;
+  const ptsAttr = (pts: { x: number; y: number }[]) =>
+    pts.map((p) => `${toX(p.x).toFixed(2)},${toY(p.y).toFixed(2)}`).join(" ");
+
+  const polyAttr = ptsAttr(geometry.polygonMm);
+  const overlapXMm = Math.round(overlapW * 1000);
+  const overlapYMm = Math.round(overlapL * 1000);
+  const totalSaved = shaped.savedW + shaped.savedL;
+  const dense = shaped.pieces.length > 360;
+
+  const groupActive = (sheetNo: number) =>
+    hover !== null && hover.groupSize > 1 && hover.sheetNo === sheetNo;
+  const pieceActive = (p: ShapedPiece) =>
+    hover !== null && (hover.key === p.key || groupActive(p.sheetNo));
+
+  const handlePrint = () => {
+    const printed = printRoofLayoutOverlay(
+      {
+        roofLength: geometry.spanLength,
+        roofWidth: geometry.spanWidth,
+        roofArea: shaped.roofArea,
+        shapeLabel: geometry.shapeLabel,
+        roofSummary: geometry.summary,
+        sheetLength,
+        sheetWidth,
+        overlapW,
+        overlapL,
+        sheets: shaped.sheets,
+        columns: shaped.columns,
+        rows: shaped.rows,
+        savedW: shaped.savedW,
+        savedL: shaped.savedL,
+        seams: shaped.seams,
+      },
+      svgRef.current,
+      shaped.hasWaste,
+    );
+    setPrintError(!printed);
+  };
+
+  const hoverText = (() => {
+    if (!hover) {
+      return totalSaved > 0
+        ? "Наведите на лист или зелёный кусок — увидите размер заготовки и из какого листа она вырезана"
+        : "Наведите на лист — увидите размер заготовки и линию подрезки по скату";
+    }
+    const size = `заготовка ${fmt.format(hover.wMm)} × ${fmt.format(hover.hMm)} мм`;
+    const cut = hover.sloped ? "косой рез по ребру" : hover.hasTrim ? "прямая подрезка" : "целый лист";
+    if (hover.reused) {
+      return `Кусок ${hover.label} — из остатка листа ${hover.sheetNo} · ${size} · ${cut}`;
+    }
+    if (hover.groupSize > 1) {
+      const extra = hover.groupSize - 1;
+      return `Лист ${hover.sheetNo} · ${size} · ${cut} · остаток идёт ещё на ${extra} ${plural(extra, "кусок", "куска", "кусков")}`;
+    }
+    return `Лист ${hover.label} · ${size} · ${cut}`;
+  })();
+
+  const topLeftPx = ox + (geometry.topLeftX ?? 0) * scale;
+  const topRightPx = topLeftPx + (geometry.topBase ?? 0) * scale;
+  const bottomLeftPx = ox + (geometry.bottomLeftX ?? 0) * scale;
+  const bottomRightPx = bottomLeftPx + (geometry.bottomBase ?? geometry.spanLength) * scale;
+  const dimBottomY = bottom + 18;
+  const dimTopY = oy - 16;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-2.5 lg:px-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-[13px] font-extrabold">
+            <LayoutGrid size={15} strokeWidth={2.3} className="text-graphite/50" />
+            Схема укладки листов
+          </div>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-[12px] font-bold text-graphite/75 transition-colors hover:border-graphite/50 hover:bg-smoke"
+          >
+            <Printer size={13} strokeWidth={2.5} />
+            Печать
+          </button>
+          {printError && (
+            <span role="alert" className="text-[11px] font-semibold text-red-600">
+              Не удалось подготовить лист печати
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11.5px] font-semibold text-graphite/55">
+          <span className="flex items-center gap-1.5">
+            <svg width="20" height="9" aria-hidden="true">
+              <rect x="0.6" y="0.6" width="18.8" height="7.8" fill="#FFCB05" fillOpacity="0.28" stroke="#A98700" strokeWidth="1.1" strokeDasharray="4 2.5" />
+            </svg>
+            перехлёст {fmt.format(overlapXMm)}ш {fmt.format(overlapYMm)}д мм
+          </span>
+          {totalSaved > 0 && (
+            <span className="flex items-center gap-1.5">
+              <svg width="20" height="9" aria-hidden="true">
+                <rect x="0.6" y="0.6" width="18.8" height="7.8" fill="#e2f3e8" stroke="#2f8f5b" strokeWidth="1.1" strokeDasharray="4 2.5" />
+              </svg>
+              остаток листа в дело
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <svg width="20" height="9" aria-hidden="true">
+              <rect x="0.6" y="0.6" width="18.8" height="7.8" fill="#fff" stroke="#98a2a8" strokeWidth="1.1" strokeDasharray="3 2.5" />
+            </svg>
+            {shaped.hasWaste ? "отход подрезки" : "без отходов"}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-4 rounded-sm border border-[#68798a] bg-[#eaf0f6]" /> лист
+          </span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto thin-scroll p-3">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+          data-roof-shape={geometry.shape}
+          className="mx-auto block h-auto w-full min-w-[540px]"
+          role="img"
+          aria-label={`Схема укладки (${geometry.shapeLabel.toLowerCase()}): всего ${fmt.format(shaped.sheets)} листов, площадь ${fmt1(shaped.roofArea)} м²`}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern id="roof-shaped-sheet" width="9" height="9" patternUnits="userSpaceOnUse">
+              <rect width="9" height="9" fill="#eaf0f6" />
+              <path d="M0 9 L9 0" stroke="#c2cfdb" strokeWidth="1" />
+              <path d="M0 0 L9 9" stroke="#dce4ec" strokeWidth="0.8" />
+            </pattern>
+            <pattern id="roof-shaped-strip" width="9" height="9" patternUnits="userSpaceOnUse">
+              <rect width="9" height="9" fill="#e2f3e8" />
+              <path d="M0 9 L9 0" stroke="#a9d8b9" strokeWidth="1" />
+            </pattern>
+            <pattern id="roof-shaped-overlap" width="6" height="6" patternUnits="userSpaceOnUse">
+              <rect width="6" height="6" fill="#FFCB05" fillOpacity="0.26" />
+              <path d="M0 6 L6 0" stroke="#c9a400" strokeWidth="1" strokeOpacity="0.5" />
+            </pattern>
+            <pattern id="roof-shaped-trim" width="5" height="5" patternUnits="userSpaceOnUse">
+              <rect width="5" height="5" fill="#fff" />
+              <path d="M0 5 L5 0" stroke="#c9d0d4" strokeWidth="0.9" />
+            </pattern>
+            <clipPath id="roof-shaped-clip">
+              {polyAttr && <polygon points={polyAttr} />}
+            </clipPath>
+          </defs>
+
+          {/* Пунктирные прямоугольники заготовок со скошенной подрезкой — виден отрезаемый угол */}
+          {shaped.pieces.map((p) =>
+            p.sloped ? (
+              <rect
+                key={`trim-${p.key}`}
+                x={toX(p.boxXMm)}
+                y={toY(p.boxYMm)}
+                width={Math.max(0.5, (p.boxWMm / 1000) * scale)}
+                height={Math.max(0.5, (p.boxHMm / 1000) * scale)}
+                fill="url(#roof-shaped-trim)"
+                stroke="#b0b8be"
+                strokeWidth="0.9"
+                strokeDasharray="3 2.5"
+              />
+            ) : null,
+          )}
+
+          {polyAttr && <polygon points={polyAttr} fill="#f6f7f6" />}
+
+          {/* Уложенные листы, обрезанные строго по контуру ската */}
+          <g clipPath="url(#roof-shaped-clip)">
+            {shaped.pieces.map((p) => {
+              const active = pieceActive(p);
+              return (
+                <rect
+                  key={`sheet-${p.key}`}
+                  x={toX(p.boxXMm)}
+                  y={toY(p.boxYMm)}
+                  width={Math.max(0.5, (p.boxWMm / 1000) * scale)}
+                  height={Math.max(0.5, (p.boxHMm / 1000) * scale)}
+                  fill={
+                    p.reused
+                      ? active
+                        ? "#cdebd8"
+                        : "url(#roof-shaped-strip)"
+                      : active
+                        ? "#d7e4f3"
+                        : "url(#roof-shaped-sheet)"
+                  }
+                  stroke={active ? "#20282B" : p.reused ? "#2f8f5b" : "#6d7e8e"}
+                  strokeWidth={active ? 2.1 : 1.1}
+                />
+              );
+            })}
+
+            {shaped.overlapBands.map((b) => (
+              <rect
+                key={b.key}
+                x={toX(b.xMm)}
+                y={toY(b.yMm)}
+                width={Math.max(0.4, (b.wMm / 1000) * scale)}
+                height={Math.max(0.4, (b.hMm / 1000) * scale)}
+                fill="url(#roof-shaped-overlap)"
+                stroke="#A98700"
+                strokeWidth="1.05"
+                strokeDasharray="5 3"
+                pointerEvents="none"
+              />
+            ))}
+
+            {!dense && (
+              <g pointerEvents="none">
+                {shaped.pieces.map((p) => {
+                  const lw = (p.labelWMm / 1000) * scale;
+                  const lh = (p.labelHMm / 1000) * scale;
+                  const mode = labelMode(lw, lh, p.label);
+                  if (!mode) return null;
+                  const cx = toX(p.labelXMm);
+                  const cy = toY(p.labelYMm);
+                  return (
+                    <text
+                      key={`num-${p.key}`}
+                      x={cx}
+                      y={cy}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize="10.5"
+                      fontWeight="700"
+                      fontFamily={MONO}
+                      fill={p.reused ? "#1f6b43" : "#3c4753"}
+                      transform={mode === "v" ? `rotate(-90 ${cx} ${cy})` : undefined}
+                    >
+                      {p.label}
+                    </text>
+                  );
+                })}
+              </g>
+            )}
+          </g>
+
+          {/* Жирный контур ската */}
+          {polyAttr && (
+            <polygon points={polyAttr} fill="none" stroke="#20282B" strokeWidth="2.2" strokeLinejoin="round" />
+          )}
+
+          {/* Для треугольника: пунктир высоты от вершины до основания и маркер вершины */}
+          {geometry.shape === "triangle" && polyAttr && (
+            <g pointerEvents="none">
+              <line
+                x1={topLeftPx}
+                y1={oy}
+                x2={topLeftPx}
+                y2={bottom}
+                stroke="#c49500"
+                strokeWidth="1.2"
+                strokeDasharray="4 3"
+              />
+              <circle cx={topLeftPx} cy={oy} r="4" fill="#FFCB05" stroke="#20282B" strokeWidth="1.6" />
+            </g>
+          )}
+
+          {/* Размерные линии */}
+          <g stroke="#5b6166" strokeWidth="1.2">
+            {/* Нижнее основание */}
+            <line x1={bottomLeftPx} y1={dimBottomY} x2={bottomRightPx} y2={dimBottomY} />
+            <line x1={bottomLeftPx} y1={bottom + 4} x2={bottomLeftPx} y2={dimBottomY + 5} />
+            <line x1={bottomRightPx} y1={bottom + 4} x2={bottomRightPx} y2={dimBottomY + 5} />
+            {/* Высота ската слева */}
+            <line x1={ox - 20} y1={oy} x2={ox - 20} y2={bottom} />
+            <line x1={ox - 26} y1={oy} x2={ox - 14} y2={oy} />
+            <line x1={ox - 26} y1={bottom} x2={ox - 14} y2={bottom} />
+            {/* Верхнее основание трапеции */}
+            {isTrapezoid && topRightPx - topLeftPx > 2 && (
+              <>
+                <line x1={topLeftPx} y1={dimTopY} x2={topRightPx} y2={dimTopY} />
+                <line x1={topLeftPx} y1={oy - 4} x2={topLeftPx} y2={dimTopY - 5} />
+                <line x1={topRightPx} y1={oy - 4} x2={topRightPx} y2={dimTopY - 5} />
+              </>
+            )}
+          </g>
+
+          <text
+            x={(bottomLeftPx + bottomRightPx) / 2}
+            y={dimBottomY + 16}
+            textAnchor="middle"
+            fontSize="12"
+            fontWeight="700"
+            fontFamily={MONO}
+            fill="#1f4f8a"
+          >
+            {isTrapezoid ? `нижнее ${m2(geometry.bottomBase ?? 0)} м` : `основание ${m2(geometry.bottomBase ?? 0)} м`}
+          </text>
+          {isTrapezoid && (
+            <text
+              x={(topLeftPx + topRightPx) / 2}
+              y={dimTopY - 6}
+              textAnchor="middle"
+              fontSize="12"
+              fontWeight="700"
+              fontFamily={MONO}
+              fill="#1f4f8a"
+            >
+              верхнее {m2(geometry.topBase ?? 0)} м
+            </text>
+          )}
+          <text
+            x={ox - 30}
+            y={oy + H / 2}
+            textAnchor="middle"
+            fontSize="12"
+            fontWeight="700"
+            fontFamily={MONO}
+            fill="#1f4f8a"
+            transform={`rotate(-90 ${ox - 30} ${oy + H / 2})`}
+          >
+            высота {m2(geometry.spanWidth)} м
+          </text>
+
+          {/* Зоны наведения по реальному отсечённому контуру каждого куска */}
+          {shaped.pieces.map((p) => (
+            <polygon
+              key={`hit-${p.key}`}
+              points={ptsAttr(p.clippedMm)}
+              fill="transparent"
+              className="cursor-crosshair"
+              onMouseEnter={() => setHover(p)}
+              onMouseLeave={() => setHover((prev) => (prev?.key === p.key ? null : prev))}
+            />
+          ))}
+        </svg>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-t border-line bg-smoke px-4 py-2.5 text-[12px] font-semibold lg:px-5">
+        <span className="flex items-center gap-2 text-graphite/70">
+          <Scissors size={13} strokeWidth={2.4} className="text-graphite/45" />
+          {hoverText}
+        </span>
+        <span className="tabular text-graphite/50">
+          до {fmt.format(shaped.columns)} в ряду · {fmt.format(shaped.rows)} рядов · полос перехлёста: {fmt.format(shaped.seams)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* БЛОК: Главный компонент калькулятора кровли (RoofCalculator)
- * ЗА ЧТО ОТВЕЧАЕТ: Объединяет левую панель параметров (размеры кровли, перехлёсты, размеры листа и кнопки готовых видов кровли) с правой колонкой (карточки сводки, схема RoofLayout и таблица «Результат расчёта»).
+ * ЗА ЧТО ОТВЕЧАЕТ: Объединяет левую панель параметров (тип кровли «Прямоугольная / Треугольная / Трапеция», размеры фигуры, перехлёсты, размеры листа и кнопки готовых видов кровли) с правой колонкой (карточки сводки, схема укладки и таблица «Результат расчёта»).
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Список готовых размеров листа берётся из useSiteSettings().sheets (админка #/admin), а также слушает событие "roof:select-material" от карточек в блоке «Виды кровли».
  * КАК ИЗМЕНИТЬ: Состав строк таблицы «Результат расчёта» меняется в массиве resultRows, а сводные плашки сверху — в массиве params. */
 export function RoofCalculator({
@@ -971,13 +1592,81 @@ export function RoofCalculator({
       return DEFAULT_ROOF;
     }
   });
+  /* Независимые параметры каждой фигуры («Прямоугольная», «Треугольная», «Трапеция») — при переключении не затираются */
+  const [shapes, setShapes] = useState<RoofShapesStore>(() => {
+    try {
+      const start = { ...DEFAULT_ROOF, ...loadSettings().calculators.roof };
+      return createDefaultRoofShapes(start.roofLength, start.roofWidth);
+    } catch {
+      return createDefaultRoofShapes(DEFAULT_ROOF.roofLength, DEFAULT_ROOF.roofWidth);
+    }
+  });
   const [presetId, setPresetId] = useState<string | null>(null);
-  const calc = useMemo(() => calcRoof(input), [input]);
+  const { compact, setCompact, dc } = useCompactView("roof:compact-view");
+
+  const shape = shapes.shape;
+  const geometry = useMemo(
+    () =>
+      buildRoofShapeGeometry({
+        ...shapes,
+        rect: { roofLength: input.roofLength, roofWidth: input.roofWidth },
+      }),
+    [shapes, input.roofLength, input.roofWidth],
+  );
+
+  const rectCalc = useMemo(() => calcRoof(input), [input]);
+  const shapedCalc = useMemo(
+    () =>
+      shape === "rect"
+        ? null
+        : calcShapedRoofLayout(
+            geometry,
+            input.sheetWidth,
+            input.sheetLength,
+            input.overlapWidth,
+            input.overlapLength,
+          ),
+    [shape, geometry, input.sheetWidth, input.sheetLength, input.overlapWidth, input.overlapLength],
+  );
+
+  const calc = useMemo(() => {
+    if (!shapedCalc) return rectCalc;
+    return {
+      ...rectCalc,
+      roofLength: geometry.spanLength,
+      roofWidth: geometry.spanWidth,
+      columns: shapedCalc.columns,
+      rows: shapedCalc.rows,
+      sheets: shapedCalc.sheets,
+      savedW: shapedCalc.savedW,
+      savedL: shapedCalc.savedL,
+      roofArea: shapedCalc.roofArea,
+      sheetsArea: shapedCalc.sheetsArea,
+      wasteArea: shapedCalc.wasteArea,
+      wastePct: shapedCalc.wastePct,
+      seams: shapedCalc.seams,
+    };
+  }, [rectCalc, shapedCalc, geometry]);
 
   const sheetPresets = useSiteSettings().sheets.filter((preset) => preset.enabled);
 
   const set = <K extends keyof RoofInput>(key: K, value: RoofInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
+
+  const setShape = (nextShape: RoofShape) =>
+    setShapes((prev) => ({ ...prev, shape: nextShape }));
+
+  const patchTriangle = (changes: Partial<RoofShapesStore["triangle"]>) =>
+    setShapes((prev) => ({
+      ...prev,
+      triangle: clampTriangleParams({ ...prev.triangle, ...changes }),
+    }));
+
+  const patchTrapezoid = (changes: Partial<RoofShapesStore["trapezoid"]>) =>
+    setShapes((prev) => ({
+      ...prev,
+      trapezoid: clampTrapezoidParams({ ...prev.trapezoid, ...changes }),
+    }));
 
   const applyPreset = (preset: SheetPreset) => {
     if (presetId === preset.id) {
@@ -1020,15 +1709,30 @@ export function RoofCalculator({
   const activePreset = sheetPresets.find((p) => p.id === presetId) ?? null;
 
   const params = [
-    { k: "Кровля", v: `${m2(calc.roofLength)} × ${m2(calc.roofWidth)} м` },
+    {
+      k: shape === "rect" ? "Кровля" : `Кровля · ${geometry.shapeLabel}`,
+      v: geometry.summary,
+    },
     { k: "Площадь", v: `${fmt1(calc.roofArea)} м²` },
     { k: "Лист", v: `${m2(calc.sheetLength)} × ${m2(calc.sheetWidth)} м` },
     { k: "Перехлёст", v: `${mm(calc.overlapW).replace(" мм", "")}ш ${mm(calc.overlapL).replace(" мм", "")}д мм` },
   ];
 
   const resultRows: { k: string; v: string; accent?: boolean }[] = [
-    { k: "Листов в одном ряду", v: `${fmt.format(calc.columns)} шт` },
-    { k: "Рядов по длине кровли", v: `${fmt.format(calc.rows)} шт` },
+    ...(shape !== "rect"
+      ? [
+          { k: "Форма кровли", v: geometry.shapeLabel },
+          {
+            k: "Длины боковых рёбер (левое / правое)",
+            v: `${m2(geometry.leftEdge)} / ${m2(geometry.rightEdge)} м`,
+          },
+        ]
+      : []),
+    {
+      k: shape === "rect" ? "Листов в одном ряду" : "Максимум листов в ряду",
+      v: `${fmt.format(calc.columns)} шт`,
+    },
+    { k: "Рядов по скату кровли", v: `${fmt.format(calc.rows)} шт` },
     { k: "Полезная ширина листа", v: mm(calc.usefulWidth) },
     { k: "Полезная длина листа", v: mm(calc.usefulLength) },
     {
@@ -1050,63 +1754,174 @@ export function RoofCalculator({
     <section
       id="calc"
       className={cn(
-        "scroll-mt-[130px] py-12 lg:py-16",
+        dc("scroll-mt-[130px] py-12 lg:py-16", "scroll-mt-[130px] py-5 lg:py-7"),
         background === "white" ? "bg-white" : "bg-smoke",
+        compact && "calc-dense",
       )}
+      data-calculator="roof"
     >
       <div className="mx-auto max-w-[1400px] px-4 lg:px-8">
-        {/* БЛОК: Заголовок секции калькулятора кровли | ЗА ЧТО ОТВЕЧАЕТ: Выводит надзаголовок и заголовок раздела | ОТКУДА ДАННЫЕ: Пропсы eyebrow и title (задаются в src/pages/RoofPage.tsx) | КАК ИЗМЕНИТЬ: Поменяйте title в src/pages/RoofPage.tsx */}
+        {/* БЛОК: Заголовок секции калькулятора кровли и переключатель «Компактно / Подробно» | ОТКУДА ДАННЫЕ: Пропсы eyebrow и title (задаются в src/pages/RoofPage.tsx) */}
         <motion.div
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease }}
-          className="mb-8"
+          className={dc("mb-8", "mb-4")}
         >
-          <div className="mb-2 text-[12.5px] font-extrabold uppercase tracking-[0.18em] text-graphite/45">
-            {eyebrow}
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className={dc("mb-2 text-[12.5px]", "mb-1 text-[11px]") + " font-extrabold uppercase tracking-[0.18em] text-graphite/45"}>
+                {eyebrow}
+              </div>
+              <h2 className={dc("text-[32px] font-black leading-[1.02] tracking-[-0.01em] lg:text-[46px]", "text-[24px] font-black leading-[1.05] tracking-[-0.01em] lg:text-[30px]")}>
+                {title}
+              </h2>
+            </div>
+            <CompactViewToggle compact={compact} onToggle={() => setCompact((v) => !v)} />
           </div>
-          <h2 className="text-[32px] font-black leading-[1.02] tracking-[-0.01em] lg:text-[46px]">
-            {title}
-          </h2>
         </motion.div>
 
-        <div className="grid items-start gap-5 lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
+        <div className={cn("grid items-start lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)]", dc("gap-5", "gap-3"))}>
           {/* БЛОК: Левая колонка — ввод габаритов ската, перехлёстов и кнопки «Готовый размер листа» | ЗА ЧТО ОТВЕЧАЕТ: Все поля управления расчётом | ОТКУДА ДАННЫЕ: Состояние input и массив sheetPresets из настроек админки | КАК ИЗМЕНИТЬ: Кнопки готовых размеров редактируются на странице «Администрирование» (#/admin) */}
           <motion.div
             initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease }}
-            className="space-y-6 rounded-3xl border border-line bg-white p-5 shadow-[0_2px_20px_rgba(20,25,27,0.05)] lg:p-6"
+            className={dc(
+              "space-y-6 rounded-3xl border border-line bg-white p-5 shadow-[0_2px_20px_rgba(20,25,27,0.05)] lg:p-6",
+              "space-y-3.5 rounded-2xl border border-line bg-white p-3 shadow-[0_2px_20px_rgba(20,25,27,0.05)] lg:p-4",
+            )}
           >
-            <div className="space-y-5">
-              <RoofField
-                label="Длина кровли"
-                unit="м"
-                value={input.roofLength}
-                onChange={(v) => set("roofLength", v)}
-                icon={MoveHorizontal}
-              />
-              <RoofField
-                label="Ширина кровли"
-                unit="м"
-                value={input.roofWidth}
-                onChange={(v) => set("roofWidth", v)}
-                icon={MoveVertical}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-smoke px-3.5 py-2.5">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-graphite/45">Площадь</div>
-                  <div className="text-[19px] font-black tabular">{fmt1(calc.roofArea)} м²</div>
+            {/* БЛОК: Выбор типа кровли («Прямоугольная», «Треугольная», «Трапеция») */}
+            <RoofShapeSwitch value={shape} onChange={setShape} />
+
+            {/* БЛОК: Настройки выбранной фигуры ската */}
+            <div className={dc("space-y-5 border-t border-line pt-5", "space-y-2.5 border-t border-line pt-3")}>
+              <div className={dc("text-[12px] font-extrabold uppercase tracking-wider text-graphite/50", "text-[11px] font-extrabold uppercase tracking-wider text-graphite/50")}>
+                Размеры
+              </div>
+
+              {shape === "rect" && (
+                <div className={cn(compact && "grid grid-cols-2 gap-x-3 gap-y-2")}>
+                  <RoofField
+                    compact={compact}
+                    label="Длина кровли"
+                    unit="м"
+                    value={input.roofLength}
+                    onChange={(v) => set("roofLength", v)}
+                    icon={MoveHorizontal}
+                  />
+                  <RoofField
+                    compact={compact}
+                    label="Ширина кровли"
+                    unit="м"
+                    value={input.roofWidth}
+                    onChange={(v) => set("roofWidth", v)}
+                    icon={MoveVertical}
+                  />
                 </div>
-                <div className="rounded-xl bg-smoke px-3.5 py-2.5">
+              )}
+
+              {shape === "triangle" && (
+                <>
+                  <div className={cn(compact && "grid grid-cols-2 gap-x-3 gap-y-2")}>
+                    <RoofField
+                      compact={compact}
+                      label="Основание"
+                      unit="м"
+                      value={shapes.triangle.base}
+                      onChange={(v) => patchTriangle({ base: v })}
+                      icon={MoveHorizontal}
+                      hint="Длина карниза (нижней стороны треугольника)"
+                    />
+                    <RoofField
+                      compact={compact}
+                      label="Высота ската"
+                      unit="м"
+                      value={shapes.triangle.height}
+                      onChange={(v) => patchTriangle({ height: v })}
+                      icon={MoveVertical}
+                      hint="Расстояние от карниза до вершины по скату"
+                    />
+                  </div>
+                  <RoofOffsetControl
+                    caption="Смещение вершины"
+                    span={shapes.triangle.base}
+                    offset={shapes.triangle.apexOffset}
+                    onOffset={(apexOffset) => patchTriangle({ apexOffset })}
+                  />
+                  <div className={dc("flex items-center justify-between gap-2 rounded-xl bg-smoke/70 px-3 py-2 text-[11.5px] font-semibold text-graphite/60", "flex items-center justify-between gap-2 rounded-lg bg-smoke/70 px-2.5 py-1.5 text-[11px] font-semibold text-graphite/60")}>
+                    <span>Боковые рёбра</span>
+                    <span className="font-bold tabular text-graphite">
+                      {m2(geometry.leftEdge)} м · {m2(geometry.rightEdge)} м
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {shape === "trapezoid" && (
+                <>
+                  <div className={cn(compact && "grid grid-cols-2 gap-x-3 gap-y-2")}>
+                    <RoofField
+                      compact={compact}
+                      label="Нижнее основание"
+                      unit="м"
+                      value={shapes.trapezoid.bottomBase}
+                      onChange={(v) => patchTrapezoid({ bottomBase: v })}
+                      icon={MoveHorizontal}
+                      hint="Длина нижней стороны (по карнизу)"
+                    />
+                    <RoofField
+                      compact={compact}
+                      label="Верхнее основание"
+                      unit="м"
+                      value={shapes.trapezoid.topBase}
+                      onChange={(v) => patchTrapezoid({ topBase: v })}
+                      icon={MoveHorizontal}
+                      hint="Длина верхней стороны (по коньку)"
+                    />
+                    <div className="col-span-2">
+                      <RoofField
+                        compact={compact}
+                        label="Высота ската"
+                        unit="м"
+                        value={shapes.trapezoid.height}
+                        onChange={(v) => patchTrapezoid({ height: v })}
+                        icon={MoveVertical}
+                        hint="Расстояние между основаниями по скату"
+                      />
+                    </div>
+                  </div>
+                  <RoofOffsetControl
+                    caption="Смещение верхнего основания"
+                    span={Math.abs(shapes.trapezoid.bottomBase - shapes.trapezoid.topBase)}
+                    offset={shapes.trapezoid.offset}
+                    onOffset={(offset) => patchTrapezoid({ offset })}
+                  />
+                  <div className={dc("flex items-center justify-between gap-2 rounded-xl bg-smoke/70 px-3 py-2 text-[11.5px] font-semibold text-graphite/60", "flex items-center justify-between gap-2 rounded-lg bg-smoke/70 px-2.5 py-1.5 text-[11px] font-semibold text-graphite/60")}>
+                    <span>Боковые рёбра</span>
+                    <span className="font-bold tabular text-graphite">
+                      {m2(geometry.leftEdge)} м · {m2(geometry.rightEdge)} м
+                    </span>
+                  </div>
+                </>
+              )}
+
+              <div className={dc("grid grid-cols-2 gap-3", "grid grid-cols-2 gap-2")}>
+                <div className={dc("rounded-xl bg-smoke px-3.5 py-2.5", "rounded-lg bg-smoke px-2.5 py-1.5")}>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-graphite/45">Площадь</div>
+                  <div className={dc("text-[19px] font-black tabular", "text-[16px] font-black tabular")}>{fmt1(calc.roofArea)} м²</div>
+                </div>
+                <div className={dc("rounded-xl bg-smoke px-3.5 py-2.5", "rounded-lg bg-smoke px-2.5 py-1.5")}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-graphite/45">Листов</div>
-                  <div className="text-[19px] font-black tabular">{fmt.format(calc.sheets)}</div>
+                  <div className={dc("text-[19px] font-black tabular", "text-[16px] font-black tabular")}>{fmt.format(calc.sheets)}</div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className={cn(compact && "grid grid-cols-2 gap-x-3 gap-y-2")}>
               <RoofField
+                compact={compact}
                 label="Перехлёст по ширине"
                 unit="мм"
                 value={input.overlapWidth}
@@ -1116,6 +1931,7 @@ export function RoofCalculator({
                 locked={Boolean(activePreset)}
               />
               <RoofField
+                compact={compact}
                 label="Перехлёст по длине"
                 unit="мм"
                 value={input.overlapLength}
@@ -1126,8 +1942,9 @@ export function RoofCalculator({
               />
             </div>
 
-            <div className="space-y-5">
+            <div className={cn(compact && "grid grid-cols-2 gap-x-3 gap-y-2")}>
               <RoofField
+                compact={compact}
                 label="Длина листа"
                 unit="м"
                 value={input.sheetLength}
@@ -1136,6 +1953,7 @@ export function RoofCalculator({
                 locked={Boolean(activePreset)}
               />
               <RoofField
+                compact={compact}
                 label="Ширина листа"
                 unit="м"
                 value={input.sheetWidth}
@@ -1146,7 +1964,7 @@ export function RoofCalculator({
             </div>
 
             <div>
-              <div className="mb-2.5 flex items-center gap-1.5 text-[13px] font-bold text-graphite/70">
+              <div className={dc("mb-2.5 flex items-center gap-1.5 text-[13px] font-bold text-graphite/70", "mb-1.5 flex items-center gap-1.5 text-[11.5px] font-bold text-graphite/70")}>
                 <Layers size={14} strokeWidth={2.4} className="text-graphite/40" />
                 Готовый размер листа
               </div>
@@ -1155,7 +1973,7 @@ export function RoofCalculator({
                   Готовые размеры не заданы — введите ширину, длину листа и перехлёсты вручную.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 auto-rows-fr gap-2">
+                <div className={dc("grid grid-cols-2 auto-rows-fr gap-2", "grid grid-cols-2 auto-rows-fr gap-1.5")}>
                   {sheetPresets.map((preset) => {
                     const active = presetId === preset.id;
                     const note = presetNote(preset);
@@ -1171,7 +1989,7 @@ export function RoofCalculator({
                             : `Зафиксировать ${note.size}, перехлёст ${note.overlap}`
                         }
                         className={cn(
-                          "flex flex-col rounded-xl border px-3 py-2.5 text-left transition-all",
+                          dc("flex flex-col rounded-xl border px-3 py-2.5 text-left transition-all", "flex flex-col rounded-lg border px-2.5 py-1.5 text-left transition-all"),
                           active
                             ? "border-graphite bg-graphite text-white shadow-[0_4px_14px_rgba(20,25,27,0.25)]"
                             : "border-line bg-white hover:border-graphite/40",
@@ -1202,7 +2020,7 @@ export function RoofCalculator({
                   })}
                 </div>
               )}
-              <div className="mt-2 text-[11.5px] leading-relaxed text-graphite/45">
+              <div className={dc("mt-2 text-[11.5px] leading-relaxed text-graphite/45", "mt-1 text-[10.5px] leading-snug text-graphite/45")}>
                 {activePreset
                   ? `Зафиксировано: ${activePreset.label}, ${presetNote(activePreset).size}, перехлёст ${presetNote(activePreset).overlap}. Нажмите кнопку ещё раз, чтобы ввести свои.`
                   : "Выберите материал кровли — размеры листа и перехлёсты подставятся и зафиксируются."}
@@ -1211,7 +2029,7 @@ export function RoofCalculator({
           </motion.div>
 
           {/* БЛОК: Правая колонка — сводные карточки, схема укладки и таблица «Результат расчёта» | ЗА ЧТО ОТВЕЧАЕТ: Визуализирует раскладку и итоговое число листов | ОТКУДА ДАННЫЕ: Массивы params, resultRows и компонент RoofLayout | КАК ИЗМЕНИТЬ: Поменяйте строки в массивах params и resultRows выше */}
-          <div className="min-w-0 space-y-5">
+          <div className={dc("min-w-0 space-y-5", "min-w-0 space-y-3")}>
             <motion.div
               initial={{ opacity: 0, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1219,9 +2037,9 @@ export function RoofCalculator({
               className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4"
             >
               {params.map((p) => (
-                <div key={p.k} className="bg-white px-4 py-3">
+                <div key={p.k} className={dc("bg-white px-4 py-3", "bg-white px-3 py-2")}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-graphite/45">{p.k}</div>
-                  <div className="mt-0.5 text-[15px] font-extrabold tabular">{p.v}</div>
+                  <div className={dc("mt-0.5 text-[15px] font-extrabold tabular", "mt-0.5 text-[13px] font-extrabold tabular")}>{p.v}</div>
                 </div>
               ))}
             </motion.div>
@@ -1231,7 +2049,18 @@ export function RoofCalculator({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1, ease }}
             >
-              <RoofLayout calc={calc} />
+              {shapedCalc ? (
+                <ShapedRoofLayout
+                  geometry={geometry}
+                  shaped={shapedCalc}
+                  sheetWidth={calc.sheetWidth}
+                  sheetLength={calc.sheetLength}
+                  overlapW={calc.overlapW}
+                  overlapL={calc.overlapL}
+                />
+              ) : (
+                <RoofLayout calc={calc} />
+              )}
             </motion.div>
 
             <motion.div
@@ -1240,8 +2069,8 @@ export function RoofCalculator({
               transition={{ duration: 0.7, delay: 0.14, ease }}
               className="overflow-hidden rounded-2xl border border-line bg-white shadow-[0_2px_20px_rgba(20,25,27,0.04)]"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3.5 lg:px-5">
-                <div className="text-[15px] font-extrabold">Результат расчёта</div>
+              <div className={dc("flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3.5 lg:px-5", "flex flex-wrap items-center justify-between gap-3 border-b border-line px-3 py-2.5 lg:px-4")}>
+                <div className={dc("text-[15px] font-extrabold", "text-[13px] font-extrabold")}>Результат расчёта</div>
                 <div className="text-[12px] font-semibold text-graphite/50">
                   количество листов с учётом перехлёстов и остатков
                 </div>
