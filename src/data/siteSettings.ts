@@ -257,6 +257,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     { id: "m-roof", label: "Кровля", href: "#/roof", enabled: true },
     { id: "m-siding", label: "Сайдинг", href: "#/siding", enabled: true },
     { id: "m-test", label: "Тест", href: "#/test", enabled: true },
+    { id: "m-404", label: "404", href: "#/404", enabled: true },
   ],
   footer: {
     calculatorsTitle: "Калькуляторы",

@@ -267,6 +267,18 @@ input.no-spin {
   padding-bottom: 0.45rem;
 }
 
+/* БЛОК: Анимированный рисунок страницы «404» (.nf-art)
+ * ЗА ЧТО ОТВЕЧАЕТ: Растягивает SVG-рисунок по ширине блока и убирает лишние отступы снизу.
+ *   Внутри SVG свои @keyframes (reveal, trace, rise, widen, extend, pop, guides); их этапы считаются
+ *   от общего времени цикла через CSS-переменную --nf-cycle.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: SVG вставляется в src/pages/NotFoundPage.tsx, который задаёт --nf-cycle.
+ * КАК ИЗМЕНИТЬ: Ширину блока задаёт max-w-[280px] на странице. */
+.nf-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 /* Компактные таблицы калькуляторов Грильято, Армстронга и Кровли: строки тоньше, как на «Сайдинге» */
 .calc-dense table th,
 .calc-dense table td {

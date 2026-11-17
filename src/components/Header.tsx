@@ -17,6 +17,7 @@ import {
   Layers3,
   House,
   Rows3,
+  SearchX,
 } from "lucide-react";
 import { STORE } from "../data/grilyato";
 import { useSiteSettings, type MenuItem } from "../data/siteSettings";
@@ -264,6 +265,7 @@ const BRAND_MENU_META: Record<string, { subtitle: string; icon: ReactNode }> = {
   "/roof": { subtitle: "Листовая кровля", icon: <House size={16} strokeWidth={2.2} /> },
   "/siding": { subtitle: "Обшивка фасада", icon: <Rows3 size={16} strokeWidth={2.2} /> },
   "/test": { subtitle: "Обшивка фасада", icon: <Rows3 size={16} strokeWidth={2.2} /> },
+  "/404": { subtitle: "Страница не найдена", icon: <SearchX size={16} strokeWidth={2.2} /> },
 };
 
 function BrandLogoMenu({

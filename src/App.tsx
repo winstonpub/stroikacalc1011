@@ -15,6 +15,7 @@ import TestPage from "./pages/TestPage";
 import AdminPage from "./pages/AdminPage";
 import RoofPage from "./pages/RoofPage";
 import SidingPage from "./pages/SidingPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 /* БЛОК: Список всех допустимых адресов страниц (PageRoute)
  * ЗА ЧТО ОТВЕЧАЕТ: Перечисляет все внутренние маршруты сайта, чтобы TypeScript проверял отсутствие опечаток в ссылках.
@@ -27,7 +28,8 @@ type PageRoute =
   | "/roof"
   | "/siding"
   | "/test"
-  | "/admin";
+  | "/admin"
+  | "/404";
 
 /* БЛОК: Распознавание текущего адреса и якоря прокрутки (getLocation)
  * ЗА ЧТО ОТВЕЧАЕТ: Разбирает часть адреса после «#» на путь страницы (route) и необязательный якорь блока (anchor, например #/roof#calc → страница "/roof", прокрутка к блоку id="calc").
@@ -37,13 +39,21 @@ function getLocation(): { route: PageRoute; anchor: string } {
   const rawHash = window.location.hash.replace(/^#/, "");
   const [rawPath = "", anchor = ""] = rawHash.split("#");
 
-  if (rawPath.startsWith("/admin")) return { route: "/admin", anchor };
-  if (rawPath.startsWith("/armstrong")) return { route: "/armstrong", anchor };
-  if (rawPath.startsWith("/grilyato")) return { route: "/grilyato", anchor };
-  if (rawPath.startsWith("/roof")) return { route: "/roof", anchor };
-  if (rawPath.startsWith("/siding")) return { route: "/siding", anchor };
-  if (rawPath.startsWith("/test")) return { route: "/test", anchor };
-  return { route: "/", anchor };
+  /* Сравниваем первый сегмент адреса целиком, чтобы опечатка (#/krovlya, #/siding-old) не открывала
+     чужую страницу, а показывала «404». Старый адрес #/smeta-test ведёт на страницу «Тест». */
+  const firstSegment = `/${rawPath.replace(/^\/+/, "").replace(/\/+$/, "").split("/")[0]}`.toLowerCase();
+  const routes: Record<string, PageRoute> = {
+    "/": "/",
+    "/grilyato": "/grilyato",
+    "/armstrong": "/armstrong",
+    "/roof": "/roof",
+    "/siding": "/siding",
+    "/test": "/test",
+    "/smeta-test": "/test",
+    "/admin": "/admin",
+    "/404": "/404",
+  };
+  return { route: routes[firstSegment] ?? "/404", anchor };
 }
 
 /* БЛОК: Слежение за переходами между страницами (useHashLocation)
@@ -84,6 +94,7 @@ export default function App() {
       "/siding": "Сайдинг - Лемана ПРО Челябинск",
       "/test": "Тест - Лемана ПРО Челябинск",
       "/admin": "Администрирование - Лемана ПРО Челябинск",
+      "/404": "Страница не найдена (404) - Лемана ПРО Челябинск",
     };
     document.title = titles[route];
 
@@ -99,8 +110,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* БЛОК: Общая шапка сайта | ЗА ЧТО ОТВЕЧАЕТ: Показывает верхнее меню, логотип и бегущую строку на всех страницах | ОТКУДА ДАННЫЕ: src/components/Header.tsx и настройки из админки | КАК ИЗМЕНИТЬ: Через страницу «Администрирование» (#/admin) или в файле src/components/Header.tsx */}
-      <Header route={route} />
+      {/* БЛОК: Общая шапка сайта | ЗА ЧТО ОТВЕЧАЕТ: Показывает верхнее меню, логотип и бегущую строку на всех страницах, кроме «404» | ОТКУДА ДАННЫЕ: src/components/Header.tsx и настройки из админки | КАК ИЗМЕНИТЬ: Через страницу «Администрирование» (#/admin) или в файле src/components/Header.tsx */}
+      {route !== "/404" && <Header route={route} />}
 
       {/* БЛОК: Область активной страницы | ЗА ЧТО ОТВЕЧАЕТ: Показывает ровно ту страницу, адрес которой сейчас выбран | ОТКУДА ДАННЫЕ: Переменная route и файлы из папки src/pages/ | КАК ИЗМЕНИТЬ: Откройте соответствующий файл в src/pages/ (например, MainPage.tsx для главной) */}
       <main>
@@ -110,6 +121,7 @@ export default function App() {
         {route === "/siding" && <SidingPage />}
         {route === "/test" && <TestPage />}
         {route === "/admin" && <AdminPage />}
+        {route === "/404" && <NotFoundPage />}
         {route === "/" && <MainPage />}
       </main>
 

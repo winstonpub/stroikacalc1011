@@ -1,5 +1,5 @@
 /* ============================================================================
- * ФАЙЛ: src/data/siteFiles.ts — Справочник всех файлов сайта для вкладки «Файлы» в админке
+ * ФАЙЛ: src/data/siteFiles.ts — Справочник всех файлов сайта для вкладки «Файлы» в админке (вкладку убрали, файл сейчас не используется)
  * ЗА ЧТО ОТВЕЧАЕТ: Перечисляет каждый файл проекта с пояснением простым языком: за что отвечает,
  *   где используется и что будет, если его удалить. Отдельно помечены файлы, которые нигде не используются,
  *   с объяснением, почему они всё ещё лежат в проекте.
@@ -149,6 +149,7 @@ export const SITE_FILE_GROUPS: SiteFileGroup[] = [
       { path: "src/pages/RoofPage.tsx", purpose: "Страница Кровля: баннер, калькулятор раскладки листов, блок «О кровле» и подвал.", usedBy: "Адрес #/roof.", status: "used" },
       { path: "src/pages/SidingPage.tsx", purpose: "Страница Сайдинг: баннер, калькулятор фасада, блок «О сайдинге» и подвал.", usedBy: "Адрес #/siding.", status: "used" },
       { path: "src/pages/TestPage.tsx", purpose: "Страница Тест: заглушка «Тестовая страница» вместо содержимого раздела.", usedBy: "Адрес #/test.", status: "used" },
+      { path: "src/pages/NotFoundPage.tsx", purpose: "Страница «404»: анимированный рисунок, пояснение и кнопки возврата при неверном адресе.", usedBy: "Адрес #/404 и любой неизвестный адрес.", status: "used" },
       { path: "src/pages/AdminPage.tsx", purpose: "Панель «Администрирование»: вход, карта страниц, настройки, публикация в таблицу.", usedBy: "Адрес #/admin.", status: "used" },
     ],
   },
@@ -240,10 +241,34 @@ export const SITE_FILE_GROUPS: SiteFileGroup[] = [
       { path: "src/data/prices.ts", purpose: "Загрузка цен и ссылок на товары из Google-таблицы.", usedBy: "Все калькуляторы.", status: "used" },
       { path: "src/components/admin/PageSettingsSection.tsx", purpose: "Раздел «Блоки и наполнение страниц сайта» в админке, включая вкладку «Файлы».", usedBy: "src/pages/AdminPage.tsx.", status: "used" },
       { path: "src/components/admin/AboutVisibilityToggle.tsx", purpose: "Переключатель показа блоков «О грильято», «О системе Армстронг», «О кровле», «О сайдинге».", usedBy: "Раздел настройки страниц.", status: "used" },
-      { path: "src/components/admin/SiteFilesSection.tsx", purpose: "Вкладка «Файлы»: список файлов по группам, поиск и фильтр по статусу.", usedBy: "Раздел настройки страниц в админке.", status: "used" },
-      { path: "src/components/admin/SiteAuditSection.tsx", purpose: "Вкладка «ИИ»: разбор недочётов сайта, как исправить и где менять.", usedBy: "Раздел настройки страниц в админке.", status: "used" },
-      { path: "src/data/siteFiles.ts", purpose: "Справочник файлов для вкладки «Файлы».", usedBy: "src/components/admin/SiteFilesSection.tsx.", status: "used" },
-      { path: "src/data/siteAudit.ts", purpose: "Список недочётов сайта с решениями для вкладки «ИИ».", usedBy: "src/components/admin/SiteAuditSection.tsx.", status: "used" },
+      {
+        path: "src/components/admin/SiteFilesSection.tsx",
+        purpose: "Вкладка «Файлы»: список файлов по группам, поиск и фильтр по статусу.",
+        usedBy: "Не подключён: кнопку «Файлы» убрали из раздела «Настройка страниц».",
+        status: "unused",
+        why: "Кнопку «Файлы» убрали из админки по запросу владельца. Файл больше не подключается ни к одной странице и ни на что не влияет, его можно удалить. Код сохранён, чтобы вернуть вкладку при необходимости.",
+      },
+      {
+        path: "src/components/admin/SiteAuditSection.tsx",
+        purpose: "Вкладка «ИИ»: разбор недочётов сайта, как исправить и где менять.",
+        usedBy: "Не подключён: кнопку «ИИ» убрали из раздела «Настройка страниц».",
+        status: "unused",
+        why: "Кнопку «ИИ» убрали из админки по запросу владельца. Файл больше не подключается ни к одной странице и ни на что не влияет, его можно удалить. Код сохранён, чтобы вернуть вкладку при необходимости.",
+      },
+      {
+        path: "src/data/siteFiles.ts",
+        purpose: "Справочник файлов для вкладки «Файлы».",
+        usedBy: "Используется только файлом SiteFilesSection.tsx, который сейчас не подключён.",
+        status: "unused",
+        why: "Справочник нужен только вкладке «Файлы», которую убрали из админки. Сам по себе он ни на что не влияет; можно удалить вместе с SiteFilesSection.tsx.",
+      },
+      {
+        path: "src/data/siteAudit.ts",
+        purpose: "Список недочётов сайта с решениями для вкладки «ИИ».",
+        usedBy: "Используется только файлом SiteAuditSection.tsx, который сейчас не подключён.",
+        status: "unused",
+        why: "Список нужен только вкладке «ИИ», которую убрали из админки. Сам по себе он ни на что не влияет; можно удалить вместе с SiteAuditSection.tsx.",
+      },
       { path: "src/integrations/supabase/config.ts", purpose: "Адрес проекта Supabase и публичный ключ.", usedBy: "Вход в админку.", status: "used" },
       { path: "src/integrations/supabase/client.ts", purpose: "Единое подключение к Supabase с запоминанием входа.", usedBy: "src/integrations/supabase/adminAuth.ts.", status: "used" },
       { path: "src/integrations/supabase/adminAuth.ts", purpose: "Вход по почте и паролю, проверка почты в таблице admins, выход.", usedBy: "Экран входа в админку и шапка.", status: "used" },
