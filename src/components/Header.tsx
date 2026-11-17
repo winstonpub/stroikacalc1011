@@ -1,9 +1,9 @@
 /* ============================================================================
  * ФАЙЛ: src/components/Header.tsx — Общая шапка сайта и векторный логотип
  * ЗА ЧТО ОТВЕЧАЕТ: Выводит закреплённую вверху экрана двухслойную шапку: 1) основную полосу с логотипом «Челябинск СТРОЙКА», кнопкой раскрывающегося списка разделов и адресом магазина; 2) жёлтую зацикленную бегущую строку.
- * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Пункты меню «Калькуляторы», скорость и тексты бегущей строки читаются из useSiteSettings() (управляются на странице «Администрирование» #/admin), а адрес и город магазина — из объекта STORE в src/data/grilyato.ts.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Пункты меню «Калькуляторы», скорость и тексты бегущей строки читаются из useSiteSettings() (управляются на странице «Администрирование» /admin), а адрес и город магазина — из объекта STORE в src/data/grilyato.ts.
  * КАК ИЗМЕНИТЬ:
- *   — Бегущую строку и порядок/видимость кнопок в меню «Калькуляторы» меняйте прямо на странице #/admin без правки кода.
+ *   — Бегущую строку и порядок/видимость кнопок в меню «Калькуляторы» меняйте прямо на странице /admin без правки кода.
  *   — Чтобы изменить сам логотип или надписи «Челябинск» / «СТРОЙКА», отредактируйте компонент LogoMark ниже.
  *   — Чтобы изменить адрес магазина в правой части верхней полосы, отредактируйте STORE в src/data/grilyato.ts.
  * ========================================================================= */
@@ -22,6 +22,7 @@ import {
 import { STORE } from "../data/grilyato";
 import { useSiteSettings, type MenuItem } from "../data/siteSettings";
 import { isAdminUnlocked, subscribeAdminSession } from "../utils/adminSession";
+import { extractRoutePath, toHref } from "../utils/router";
 import { cn } from "../utils/cn";
 
 /* БЛОК: Векторные логотипы сайта «Челябинск СТРОЙКА» (LogoMark — верхний, FooterLogoMark — нижний)
@@ -286,17 +287,14 @@ function BrandLogoMenu({
 
   const pages = [
     ...menuItems
-      .filter((item) => {
-        const path = item.href.replace(/^#/, "").split("#")[0] || "/";
-        return path !== "/";
-      })
+      .filter((item) => extractRoutePath(item.href) !== "/")
       .map((item) => {
-        const path = item.href.replace(/^#/, "").split("#")[0] || "/";
+        const path = extractRoutePath(item.href);
         const meta = BRAND_MENU_META[path];
         return {
           id: item.id,
           label: item.label,
-          href: item.href,
+          href: toHref(item.href),
           subtitle: meta?.subtitle ?? "Калькулятор",
           icon: meta?.icon ?? <Calculator size={16} strokeWidth={2.2} />,
         };
@@ -306,7 +304,7 @@ function BrandLogoMenu({
           {
             id: "admin",
             label: "Администрирование",
-            href: "#/admin",
+            href: toHref("/admin"),
             subtitle: "Панель управления",
             icon: <SlidersHorizontal size={16} strokeWidth={2.2} />,
           },
@@ -315,8 +313,8 @@ function BrandLogoMenu({
   ];
 
   const isActive = (href: string) => {
-    const path = href.replace(/^#/, "").split("#")[0] || "/";
-    return path !== "/" && route.startsWith(path);
+    const path = extractRoutePath(href);
+    return path !== "/" && route === path;
   };
 
   /* Отступ значка списка: нужное видимое расстояние минус пустое поле справа внутри картинки логотипа */
@@ -371,7 +369,7 @@ function BrandLogoMenu({
       style={{ transform: `translate(${logo.offsetX}px, ${logo.offsetY}px)` }}
     >
       <a
-        href="#/"
+        href={toHref("/")}
         aria-label="Челябинск Стройка — на главную"
         className="group flex items-center shrink-0 rounded-[10px] py-0.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c400]"
       >

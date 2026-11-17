@@ -10,6 +10,7 @@
  * ========================================================================= */
 
 import SiteFooter from "../components/SiteFooter";
+import { toHref } from "../utils/router";
 
 /* БЛОК: Заглушка страницы «Тест» (TestPage)
  * ЗА ЧТО ОТВЕЧАЕТ: Тёмный баннер с названием страницы и белая карточка с пояснением «Раздел временно
@@ -59,7 +60,7 @@ export default function TestPage() {
             в главном меню сайта.
           </p>
           <a
-            href="#/"
+            href={toHref("/")}
             className="mt-6 inline-flex h-[48px] items-center gap-2 rounded-2xl bg-pro px-6 text-[14px] font-extrabold text-graphite transition-all hover:gap-3 hover:bg-pro-soft"
           >
             Перейти на главную

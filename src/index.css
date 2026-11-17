@@ -272,7 +272,7 @@ input.no-spin {
  *   Внутри SVG свои @keyframes (reveal, trace, rise, widen, extend, pop, guides); их этапы считаются
  *   от общего времени цикла через CSS-переменную --nf-cycle.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: SVG вставляется в src/pages/NotFoundPage.tsx, который задаёт --nf-cycle.
- * КАК ИЗМЕНИТЬ: Ширину блока задаёт max-w-[280px] на странице. */
+ * КАК ИЗМЕНИТЬ: Ширину блока задаёт константа NF_ART_MAX_WIDTH в src/pages/NotFoundPage.tsx. */
 .nf-art svg {
   display: block;
   width: 100%;

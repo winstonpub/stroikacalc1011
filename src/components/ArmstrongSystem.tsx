@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ARMSTRONG_ANGLES, ARMSTRONG_PROFILES, ARMSTRONG_TILES } from "../data/armstrong";
 import { cn } from "../utils/cn";
+import { assetUrl } from "../utils/router";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -480,7 +481,7 @@ export default function ArmstrongSystem() {
           >
             <div className="overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
               <img
-                src="images/armstrong-hero.jpg"
+                src={assetUrl("images/armstrong-hero.jpg")}
                 alt="Подвесной потолок Армстронг крупным планом"
                 className="h-[380px] w-full object-cover lg:h-[520px]"
               />

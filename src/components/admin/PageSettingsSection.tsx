@@ -33,6 +33,9 @@ import {
   LOGO_HEIGHT_MAX,
   LOGO_HEIGHT_MIN,
   LOGO_OFFSET_MAX,
+  NOT_FOUND_GAP_DEFAULT,
+  NOT_FOUND_GAP_MAX,
+  NOT_FOUND_GAP_MIN,
   SHEET_OVERLAP_MAX,
   SHEET_SIZE_MAX,
   SHEET_SIZE_MIN,
@@ -50,16 +53,17 @@ import { SIDING_COLORS, SIDING_TRIM_PARTS, getAvailableSidingColors } from "../.
 import { TickerEditor, FooterEditor, NumberField, SheetEditor } from "../../pages/AdminPage";
 import { FooterLogoMark, LogoMark } from "../Header";
 import { cn } from "../../utils/cn";
+import { extractRoutePath, toHref } from "../../utils/router";
 import AboutVisibilityToggle from "./AboutVisibilityToggle";
 
 
 /* Подписи и теги для страниц, у которых есть карточка в блоке «Выберите Калькулятор» на главной.
  * Остальные страницы выводятся в этом же списке, но кнопка «Главная» у них недоступна — карточки на главной у них нет. */
 const HOME_CARD_INFO: Record<string, { eyebrow: string; tags: string }> = {
-  "#/grilyato": { eyebrow: "Ячеистый потолок", tags: "50×50 · 75×75 · 100×100" },
-  "#/armstrong": { eyebrow: "Модульный потолок", tags: "600×600 · Т-24 · НГ" },
-  "#/roof": { eyebrow: "Листовая кровля", tags: "С20 · С8 · Монтерей · Ондулин" },
-  "#/siding": { eyebrow: "Обшивка фасада", tags: "ПВХ · 3000 × 203 мм · Учёт обрезков" },
+  "/grilyato": { eyebrow: "Ячеистый потолок", tags: "50×50 · 75×75 · 100×100" },
+  "/armstrong": { eyebrow: "Модульный потолок", tags: "600×600 · Т-24 · НГ" },
+  "/roof": { eyebrow: "Листовая кровля", tags: "С20 · С8 · Монтерей · Ондулин" },
+  "/siding": { eyebrow: "Обшивка фасада", tags: "ПВХ · 3000 × 203 мм · Учёт обрезков" },
 };
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -89,12 +93,15 @@ function BlockCard({
   title,
   description,
   children,
+  wrapTitle = false,
 }: {
   num: number;
   badge: string;
   title: string;
   description: string;
   children: ReactNode;
+  /** true — длинный заголовок переносится на вторую строку, а не обрезается многоточием */
+  wrapTitle?: boolean;
 }) {
   /* По умолчанию карточка блока свёрнута — видна только шапка с названием и кнопкой «Развернуть» */
   const [isOpen, setIsOpen] = useState(false);
@@ -112,7 +119,7 @@ function BlockCard({
                 {badge}
               </span>
             </div>
-            <h4 className="mt-0.5 truncate text-[16px] font-black leading-tight text-graphite">{title}</h4>
+            <h4 className={cn("mt-0.5 text-[16px] font-black leading-tight text-graphite", !wrapTitle && "truncate")}>{title}</h4>
           </div>
         </div>
 
@@ -270,7 +277,7 @@ export default function PageSettingsSection({
   open,
   onToggleOpen,
 }: PageSettingsSectionProps) {
-  const [selectedRoute, setSelectedRoute] = useState<string>("#/");
+  const [selectedRoute, setSelectedRoute] = useState<string>("/");
   const [savedBannerMsg] = useState("");
 
   const activePage = pages.find((p) => p.route === selectedRoute) ?? pages[0];
@@ -433,22 +440,23 @@ export default function PageSettingsSection({
 
             {/* БЛОК: Список всех блоков выбранной страницы с редакторами */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3 px-1">
-                <div className="flex items-center gap-2 text-[14px] font-black text-graphite">
-                  <activePage.icon size={18} strokeWidth={2.4} className="text-pro" />
+              {/* flex-wrap: на телефоне кнопка «Открыть страницу» переносится под заголовок и не растягивает страницу вширь */}
+              <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 text-[14px] font-black text-graphite">
+                  <activePage.icon size={18} strokeWidth={2.4} className="shrink-0 text-pro" />
                   <span>Блоки страницы «{activePage.title}»</span>
                   <span className="rounded-lg bg-smoke px-2 py-0.5 text-[11px] font-bold text-graphite/60">
                     {activePage.route}
                   </span>
                 </div>
                 <a
-                  href={activePage.route}
+                  href={toHref(activePage.route)}
                   target="_blank"
                   rel="noreferrer"
-                  className="group inline-flex h-[46px] shrink-0 items-center gap-2 rounded-2xl bg-pro px-6 text-[14px] font-extrabold text-graphite transition-all hover:gap-3 hover:bg-pro-soft"
+                  className="group inline-flex h-[46px] max-w-full items-center gap-2 rounded-2xl bg-pro px-6 text-[14px] font-extrabold text-graphite transition-all hover:gap-3 hover:bg-pro-soft"
                 >
-                  <span>Открыть страницу в новой вкладке</span>
-                  <ArrowRight size={16} strokeWidth={2.6} className="transition-transform group-hover:translate-x-0.5" />
+                  <span className="truncate">Открыть страницу в новой вкладке</span>
+                  <ArrowRight size={16} strokeWidth={2.6} className="shrink-0 transition-transform group-hover:translate-x-0.5" />
                 </a>
               </div>
 
@@ -575,6 +583,173 @@ function LogoEditor({ settings, update }: { settings: SiteSettings; update: (nex
   );
 }
 
+/* БЛОК: Настройка страницы «404» — расстояние между логотипом и текстом (NotFoundGapEditor)
+ * ЗА ЧТО ОТВЕЧАЕТ: Ползунок, поле с точным числом и готовые варианты для расстояния между анимированным
+ *   логотипом «404» и текстом «Страница не найдена» с кнопкой «На главную». Справа — схема страницы,
+ *   на которой расстояние меняется сразу.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: settings.notFound.logoGap и границы NOT_FOUND_GAP_MIN / NOT_FOUND_GAP_MAX
+ *   из src/data/siteSettings.ts.
+ * КАК ИЗМЕНИТЬ: Готовые варианты — в массиве NOT_FOUND_GAP_PRESETS ниже (название и число пикселей). */
+const NOT_FOUND_GAP_PRESETS: { label: string; value: number }[] = [
+  { label: "Вплотную", value: 24 },
+  { label: "Компактно", value: 48 },
+  { label: "Стандарт", value: NOT_FOUND_GAP_DEFAULT },
+  { label: "Свободно", value: 110 },
+];
+
+/* Схема справа нарисована в половину настоящего размера страницы */
+const NOT_FOUND_PREVIEW_SCALE = 0.5;
+
+function NotFoundGapEditor({ settings, update }: { settings: SiteSettings; update: (next: SiteSettings) => void }) {
+  const gap = settings.notFound.logoGap;
+  const setGap = (value: number) => {
+    if (!Number.isFinite(value)) return;
+    const bounded = Math.min(NOT_FOUND_GAP_MAX, Math.max(NOT_FOUND_GAP_MIN, Math.round(value)));
+    update({ ...settings, notFound: { ...settings.notFound, logoGap: bounded } });
+  };
+  const fill = ((gap - NOT_FOUND_GAP_MIN) / (NOT_FOUND_GAP_MAX - NOT_FOUND_GAP_MIN)) * 100;
+  const previewGap = gap * NOT_FOUND_PREVIEW_SCALE;
+
+  return (
+    <BlockCard
+      num={1}
+      badge="Оформление"
+      title="Расстояние между логотипом и текстом"
+      wrapTitle
+      description="Насколько далеко от анимированного логотипа «404» стоит текст «Страница не найдена» с кнопкой «На главную». Расстояние считается от нижнего края цифр «404» до заголовка."
+    >
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="space-y-4">
+          <div className="flex items-end gap-3">
+            <label className="block min-w-0 flex-1" htmlFor="nf-gap-range">
+              <span className="flex items-center justify-between text-[12px] font-bold text-graphite/70">
+                Расстояние
+                <span className="tabular text-graphite">{gap} px</span>
+              </span>
+              <input
+                id="nf-gap-range"
+                data-testid="nf-gap-range"
+                type="range"
+                min={NOT_FOUND_GAP_MIN}
+                max={NOT_FOUND_GAP_MAX}
+                step={1}
+                value={gap}
+                onChange={(e) => setGap(Number(e.target.value))}
+                className="pro-range mt-1 w-full"
+                style={{ "--fill": `${fill}%` } as React.CSSProperties}
+              />
+              <span className="flex justify-between text-[10.5px] font-semibold tabular text-graphite/40">
+                <span>{NOT_FOUND_GAP_MIN}</span>
+                <span>{NOT_FOUND_GAP_MAX} px</span>
+              </span>
+            </label>
+            <div className="w-[104px] shrink-0">
+              <NumberField
+                label="Точно"
+                unit="px"
+                icon={Ruler}
+                step="1"
+                value={gap}
+                onChange={setGap}
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 text-[11.5px] font-extrabold uppercase tracking-wider text-graphite/50">
+              Готовые варианты
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {NOT_FOUND_GAP_PRESETS.map((preset) => {
+                const active = preset.value === gap;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setGap(preset.value)}
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-[12.5px] font-bold transition-colors",
+                      active
+                        ? "border-pro bg-pro text-graphite"
+                        : "border-line bg-smoke text-graphite/70 hover:bg-white hover:text-graphite",
+                    )}
+                  >
+                    {preset.label}
+                    <span className={cn("tabular text-[11px]", active ? "text-graphite/70" : "text-graphite/40")}>
+                      {preset.value}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-3">
+            <a
+              href={toHref("/404")}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-graphite underline-offset-2 hover:underline"
+            >
+              Открыть страницу «404»
+              <ArrowRight size={13} strokeWidth={2.6} />
+            </a>
+            <span className="text-[11px] leading-snug text-graphite/45">
+              На самой странице расстояние изменится после нажатия «Сохранить и опубликовать».
+            </span>
+          </div>
+        </div>
+
+        {/* БЛОК: Схема страницы «404» | ЗА ЧТО ОТВЕЧАЕТ: Показывает логотип, заголовок и кнопку в половину
+            настоящего размера; жёлтая отметка между ними — настраиваемое расстояние. */}
+        <div
+          className="flex flex-col items-center justify-center overflow-hidden rounded-xl bg-[#20282B] px-4 py-6"
+          aria-hidden="true"
+        >
+          <svg viewBox="76 44 360 424" className="w-[60px]">
+            <path
+              d="M243.1 54.9A20 20 0 0 1 268.9 54.9L426.07 187.61A28 28 0 0 1 436 209L436 440A28 28 0 0 1 408 468L104 468A28 28 0 0 1 76 440L76 209A28 28 0 0 1 85.93 187.61Z"
+              fill="#f5c400"
+            />
+            <rect x="112" y="212" width="288" height="64" rx="14" fill="#2b2b2b" />
+            <rect x="112" y="300" width="54" height="54" rx="12" fill="#ecf6fa" />
+            <rect x="190" y="300" width="54" height="54" rx="12" fill="#ecf6fa" />
+            <rect x="268" y="300" width="54" height="54" rx="12" fill="#ecf6fa" />
+            <rect x="112" y="378" width="54" height="54" rx="12" fill="#ecf6fa" />
+            <rect x="190" y="378" width="54" height="54" rx="12" fill="#ecf6fa" />
+            <rect x="268" y="378" width="54" height="54" rx="12" fill="#ecf6fa" />
+            <rect x="346" y="300" width="54" height="132" rx="12" fill="#e0a800" />
+          </svg>
+          <div className="mt-2 text-[21px] font-black leading-none tracking-[0.04em] text-white">404</div>
+
+          <div
+            data-testid="nf-gap-preview"
+            className="relative flex w-full items-center justify-center"
+            style={{ height: previewGap }}
+          >
+            <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[#f5c400]/70" />
+            {previewGap >= 18 && (
+              <span className="relative rounded bg-[#f5c400] px-1.5 py-px text-[10px] font-extrabold tabular leading-tight text-[#20282B]">
+                {gap} px
+              </span>
+            )}
+          </div>
+
+          <div className="text-center text-[23px] font-black leading-[0.98] tracking-[-0.02em] text-white">
+            Страница
+            <br />
+            <span className="text-[#f5c400]">не найдена</span>
+          </div>
+          <div className="mt-3 inline-flex h-[26px] items-center rounded-lg bg-[#f5c400] px-3.5 text-[9px] font-extrabold text-[#20282B]">
+            На главную
+          </div>
+        </div>
+      </div>
+    </BlockCard>
+  );
+}
+
 /* ============================================================================
  * РЕНДЕР ВСЕХ БЛОКОВ ДЛЯ КАЖДОЙ КОНКРЕТНОЙ СТРАНИЦЫ
  * ========================================================================= */
@@ -584,13 +759,13 @@ function renderPageBlocks(
   update: (next: SiteSettings) => void,
   pages: AdminPageItem[],
 ) {
-  if (route === "#/") {
+  if (route === "/") {
     /* «Главная» — карточка в блоке «Выберите Калькулятор» (флаг onHome); «Выпадающий» — пункт в списке «Калькуляторы» в шапке (флаг enabled) */
     const toggleHome = (href: string) => {
       update({
         ...settings,
         menu: settings.menu.map((item) =>
-          item.href === href ? { ...item, onHome: item.onHome === false } : item,
+          extractRoutePath(item.href) === href ? { ...item, onHome: item.onHome === false } : item,
         ),
       });
     };
@@ -598,7 +773,7 @@ function renderPageBlocks(
       update({
         ...settings,
         menu: settings.menu.map((item) =>
-          item.href === href ? { ...item, enabled: !item.enabled } : item,
+          extractRoutePath(item.href) === href ? { ...item, enabled: !item.enabled } : item,
         ),
       });
     };
@@ -628,12 +803,12 @@ function renderPageBlocks(
         >
           <div className="space-y-2">
             {pages
-              .filter((page) => page.route !== "#/")
+              .filter((page) => page.route !== "/")
               .map((page) => {
                 const info = HOME_CARD_INFO[page.route];
-                const isSitemapLocked = page.route === "#/admin" || page.badge === "Карта сайта";
+                const isSitemapLocked = page.route === "/admin" || page.badge === "Карта сайта";
                 const hasHomeCard = Boolean(info) && !isSitemapLocked;
-                const menuItem = settings.menu.find((item) => item.href === page.route);
+                const menuItem = settings.menu.find((item) => extractRoutePath(item.href) === page.route);
                 const canToggleMenu = Boolean(menuItem) && !isSitemapLocked;
                 const onHome = hasHomeCard && menuItem?.onHome !== false;
                 const inMenu = canToggleMenu && menuItem?.enabled !== false;
@@ -724,8 +899,8 @@ function renderPageBlocks(
     );
   }
 
-  if (route === "#/grilyato" || route === "#/armstrong") {
-    const isArmstrong = route === "#/armstrong";
+  if (route === "/grilyato" || route === "/armstrong") {
+    const isArmstrong = route === "/armstrong";
     const key = isArmstrong ? "armstrong" : "grilyato";
     const calc = settings.calculators[key];
 
@@ -971,7 +1146,7 @@ function renderPageBlocks(
     );
   }
 
-  if (route === "#/roof") {
+  if (route === "/roof") {
     const roof = settings.calculators.roof;
     const patch = (changes: Partial<typeof roof>) =>
       update({ ...settings, calculators: { ...settings.calculators, roof: { ...roof, ...changes } } });
@@ -1014,7 +1189,7 @@ function renderPageBlocks(
     );
   }
 
-  if (route === "#/siding") {
+  if (route === "/siding") {
     const sd = settings.calculators.siding;
     const patch = (changes: Partial<typeof sd>) =>
       update({ ...settings, calculators: { ...settings.calculators, siding: { ...sd, ...changes } } });
@@ -1139,16 +1314,18 @@ function renderPageBlocks(
     );
   }
 
-  if (route === "#/404") {
+  if (route === "/404") {
     return (
-      <div className="rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-[13.5px] font-semibold text-graphite/50">
-        Страница «404» показывается при неверном адресе и не содержит настраиваемых блоков.
-        Рисунок, заголовок и кнопки меняются в файле src/pages/NotFoundPage.tsx.
+      <div className="space-y-3.5">
+        <NotFoundGapEditor settings={settings} update={update} />
+        <p className="px-1 text-[11.5px] leading-snug text-graphite/45">
+          Рисунок, заголовок и кнопка страницы «404» меняются в файле src/pages/NotFoundPage.tsx.
+        </p>
       </div>
     );
   }
 
-  if (route === "#/test") {
+  if (route === "/test") {
     return (
       <div className="rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-[13.5px] font-semibold text-graphite/50">
         Страница «Тест» сейчас показывает заглушку «Тестовая страница» и не содержит настраиваемых блоков.

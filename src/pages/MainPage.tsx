@@ -18,6 +18,7 @@ import {
 import SiteFooter from "../components/SiteFooter";
 import { useChelyabinskDelivery } from "../hooks/useChelyabinskDelivery";
 import { useSiteSettings } from "../data/siteSettings";
+import { assetUrl, extractRoutePath, toHref } from "../utils/router";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -32,7 +33,7 @@ const systems = [
     description:
       "Алюминиевая решётчатая система для торговых залов, офисов и общественных пространств.",
     image: "images/grilyato-hero.jpg",
-    href: "#/grilyato",
+    href: "/grilyato",
     action: "Открыть калькулятор",
     tags: ["50×50", "75×75", "100×100"],
     Icon: Grid3X3,
@@ -43,7 +44,7 @@ const systems = [
     description:
       "Практичная система с плитами 600×600 для акустического комфорта и быстрого доступа к коммуникациям.",
     image: "images/armstrong-hero.jpg",
-    href: "#/armstrong",
+    href: "/armstrong",
     action: "Открыть калькулятор",
     tags: ["600×600", "Т-24", "НГ"],
     Icon: Layers3,
@@ -54,7 +55,7 @@ const systems = [
     description:
       "Профилированные листы и ондулин для скатных крыш частных домов, дач и хозяйственных построек.",
     image: "images/roof-hero.jpg",
-    href: "#/roof",
+    href: "/roof",
     action: "Открыть калькулятор",
     tags: ["С20", "С8", "Монтерей", "Ондулин"],
     Icon: House,
@@ -65,7 +66,7 @@ const systems = [
     description:
       "Панельная ПВХ-система для наружной отделки стен: защита фасада и аккуратный внешний вид дома.",
     image: "images/siding-hero.jpg",
-    href: "#/siding",
+    href: "/siding",
     action: "Открыть калькулятор",
     tags: ["ПВХ", "3000 × 203 мм", "Учёт обрезков"],
     Icon: Rows3,
@@ -81,7 +82,7 @@ export default function MainPage() {
   const settings = useSiteSettings();
   /* Карточка показывается, пока в админке не выключена кнопка «Главная» (флаг onHome); пункт меню шапки управляется отдельно */
   const visibleSystems = systems.filter((system) => {
-    const item = settings.menu.find((entry) => entry.href === system.href);
+    const item = settings.menu.find((entry) => extractRoutePath(entry.href) === system.href);
     return !item || item.onHome !== false;
   });
 
@@ -91,7 +92,7 @@ export default function MainPage() {
       <section id="top" className="relative overflow-hidden bg-graphite text-white">
         <div className="absolute inset-0">
           <img
-            src="images/main-hero.jpg"
+            src={assetUrl("images/main-hero.jpg")}
             alt="Современный интерьер с подвесным потолком"
             className="h-full w-full object-cover opacity-35"
           />
@@ -176,7 +177,7 @@ export default function MainPage() {
             {visibleSystems.map(({ name, eyebrow, description, image, href, action, tags, Icon }, index) => (
               <motion.a
                 key={name}
-                href={href}
+                href={toHref(href)}
                 initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
@@ -184,7 +185,7 @@ export default function MainPage() {
                 className="group relative flex min-h-[430px] overflow-hidden rounded-3xl border border-line bg-graphite text-white shadow-[0_12px_34px_rgba(20,25,27,0.12)]"
               >
                 <img
-                  src={image}
+                  src={assetUrl(image)}
                   alt={`${eyebrow}: ${name}`}
                   className="absolute inset-0 h-full w-full object-cover opacity-55 transition-transform duration-700 group-hover:scale-105"
                 />

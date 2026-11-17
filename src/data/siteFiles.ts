@@ -126,8 +126,14 @@ export const SITE_FILE_GROUPS: SiteFileGroup[] = [
       },
       {
         path: "src/App.tsx",
-        purpose: "Определяет открытую страницу по адресу после # (#/grilyato, #/roof…), меняет заголовок вкладки и выводит шапку.",
+        purpose: "Определяет открытую страницу по чистому адресу (/grilyato, /armstrong, /roof…), меняет заголовок вкладки и выводит шапку.",
         usedBy: "src/main.tsx.",
+        status: "used",
+      },
+      {
+        path: "src/utils/router.ts",
+        purpose: "Маршрутизация без решётки (#): переходы History API, поддержка подпапки GitHub Pages и перенаправление старых #/-ссылок.",
+        usedBy: "src/App.tsx, шапка, подвал, страницы и админка.",
         status: "used",
       },
       {
@@ -143,14 +149,14 @@ export const SITE_FILE_GROUPS: SiteFileGroup[] = [
     title: "Страницы сайта",
     description: "Каждый файл — одна страница, которую открывает src/App.tsx.",
     files: [
-      { path: "src/pages/MainPage.tsx", purpose: "Главная: баннер и карточки «Выберите калькулятор».", usedBy: "Адрес #/.", status: "used" },
-      { path: "src/pages/GrilyatoPage.tsx", purpose: "Страница Грильято: баннер, калькулятор, блок «О системе» и подвал.", usedBy: "Адрес #/grilyato.", status: "used" },
-      { path: "src/pages/ArmstrongPage.tsx", purpose: "Страница Армстронг: баннер, калькулятор, каталог плит и подвал.", usedBy: "Адрес #/armstrong.", status: "used" },
-      { path: "src/pages/RoofPage.tsx", purpose: "Страница Кровля: баннер, калькулятор раскладки листов, блок «О кровле» и подвал.", usedBy: "Адрес #/roof.", status: "used" },
-      { path: "src/pages/SidingPage.tsx", purpose: "Страница Сайдинг: баннер, калькулятор фасада, блок «О сайдинге» и подвал.", usedBy: "Адрес #/siding.", status: "used" },
-      { path: "src/pages/TestPage.tsx", purpose: "Страница Тест: заглушка «Тестовая страница» вместо содержимого раздела.", usedBy: "Адрес #/test.", status: "used" },
-      { path: "src/pages/NotFoundPage.tsx", purpose: "Страница «404»: анимированный рисунок, пояснение и кнопки возврата при неверном адресе.", usedBy: "Адрес #/404 и любой неизвестный адрес.", status: "used" },
-      { path: "src/pages/AdminPage.tsx", purpose: "Панель «Администрирование»: вход, карта страниц, настройки, публикация в таблицу.", usedBy: "Адрес #/admin.", status: "used" },
+      { path: "src/pages/MainPage.tsx", purpose: "Главная: баннер и карточки «Выберите калькулятор».", usedBy: "Адрес /.", status: "used" },
+      { path: "src/pages/GrilyatoPage.tsx", purpose: "Страница Грильято: баннер, калькулятор, блок «О системе» и подвал.", usedBy: "Адрес /grilyato.", status: "used" },
+      { path: "src/pages/ArmstrongPage.tsx", purpose: "Страница Армстронг: баннер, калькулятор, каталог плит и подвал.", usedBy: "Адрес /armstrong.", status: "used" },
+      { path: "src/pages/RoofPage.tsx", purpose: "Страница Кровля: баннер, калькулятор раскладки листов, блок «О кровле» и подвал.", usedBy: "Адрес /roof.", status: "used" },
+      { path: "src/pages/SidingPage.tsx", purpose: "Страница Сайдинг: баннер, калькулятор фасада, блок «О сайдинге» и подвал.", usedBy: "Адрес /siding.", status: "used" },
+      { path: "src/pages/TestPage.tsx", purpose: "Страница Тест: заглушка «Тестовая страница» вместо содержимого раздела.", usedBy: "Адрес /test.", status: "used" },
+      { path: "src/pages/NotFoundPage.tsx", purpose: "Страница «404»: анимированный рисунок, пояснение и кнопки возврата при неверном адресе.", usedBy: "Адрес /404 и любой неизвестный адрес.", status: "used" },
+      { path: "src/pages/AdminPage.tsx", purpose: "Панель «Администрирование»: вход, карта страниц, настройки, публикация в таблицу.", usedBy: "Адрес /admin.", status: "used" },
     ],
   },
   {

@@ -55,7 +55,7 @@ export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6...";
 
 ## Шаг 6. Проверьте вход
 
-1. Откройте сайт → `https://<ВАШ-ЛОГИН>.github.io/stroikacalc/#/admin`.
+1. Откройте сайт → `https://<ВАШ-ЛОГИН>.github.io/stroikacalc/admin`.
 2. Введите почту и пароль аккаунта из шага 4.
 3. Должна открыться панель «Администрирование», а вверху появиться ваша почта и роль.
 

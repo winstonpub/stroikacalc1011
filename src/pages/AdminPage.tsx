@@ -57,6 +57,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import SiteFooter from "../components/SiteFooter";
+import { toHref } from "../utils/router";
 import {
   DEFAULT_SETTINGS,
   FOOTER_ICON_KEYS,
@@ -158,7 +159,7 @@ interface PageItem {
 const PAGES: PageItem[] = [
   {
     title: "Главная страница",
-    route: "#/",
+    route: "/",
     category: "Главная",
     badge: "Витрина",
     description:
@@ -168,7 +169,7 @@ const PAGES: PageItem[] = [
   },
   {
     title: "Калькулятор · Грильято",
-    route: "#/grilyato",
+    route: "/grilyato",
     category: "Калькулятор",
     badge: "Потолок",
     description:
@@ -178,7 +179,7 @@ const PAGES: PageItem[] = [
   },
   {
     title: "Калькулятор · Армстронг",
-    route: "#/armstrong",
+    route: "/armstrong",
     category: "Калькулятор",
     badge: "Потолок",
     description:
@@ -188,7 +189,7 @@ const PAGES: PageItem[] = [
   },
   {
     title: "Кровля",
-    route: "#/roof",
+    route: "/roof",
     category: "Калькулятор",
     badge: "Кровля",
     description:
@@ -198,7 +199,7 @@ const PAGES: PageItem[] = [
   },
   {
     title: "Сайдинг",
-    route: "#/siding",
+    route: "/siding",
     category: "Калькулятор",
     badge: "Фасад",
     description:
@@ -208,7 +209,7 @@ const PAGES: PageItem[] = [
   },
   {
     title: "Тест",
-    route: "#/test",
+    route: "/test",
     category: "Системная",
     badge: "Тестовая",
     description:
@@ -218,17 +219,17 @@ const PAGES: PageItem[] = [
   },
   {
     title: "404",
-    route: "#/404",
+    route: "/404",
     category: "Системная",
     badge: "Ошибка",
     description:
       "Страница «404» показывается, когда адрес введён неверно. Содержит анимированный рисунок и кнопки возврата.",
     icon: FileQuestion,
-    details: ["Анимированный рисунок", "Кнопки возврата", "Показывается при неверном адресе"],
+    details: ["Анимированный рисунок", "Кнопки возврата", "Показывается при неверном адресе", "Настройка расстояния между логотипом и текстом"],
   },
   {
     title: "Администрирование",
-    route: "#/admin",
+    route: "/admin",
     category: "Системная",
     badge: "Карта сайта",
     description:
@@ -404,7 +405,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
             </div>
 
             <a
-              href="#/"
+              href={toHref("/")}
               className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-bold text-white/55 transition-colors hover:text-pro"
             >
               Вернуться на главную
@@ -954,7 +955,7 @@ export function FooterEditor({
                     value={item.href}
                     onChange={(value) => patchLink(item.id, { href: value })}
                     ariaLabel={`Адрес ссылки ${index + 1}`}
-                    placeholder="#/grilyato или https://…"
+                    placeholder="/grilyato или https://…"
                     maxLength={400}
                     className="text-[12px] font-semibold text-graphite/65"
                   />
@@ -965,7 +966,7 @@ export function FooterEditor({
                         внешний сайт — откроется в новой вкладке
                       </>
                     ) : (
-                      <>страница сайта — адрес вида #/grilyato или #/armstrong#calc</>
+                      <>страница сайта — адрес вида /grilyato или /armstrong#calc</>
                     )}
                   </div>
                 </div>
@@ -979,7 +980,7 @@ export function FooterEditor({
               patchFooter({
                 links: [
                   ...links,
-                  { id: `f-${Date.now()}`, label: "Новая ссылка", href: "#/", enabled: true },
+                  { id: `f-${Date.now()}`, label: "Новая ссылка", href: "/", enabled: true },
                 ],
               })
             }
@@ -1794,7 +1795,7 @@ export default function AdminPage() {
             className="mt-5 flex flex-wrap gap-3"
           >
             <a
-              href="#/admin#page-settings"
+              href={toHref("/admin#page-settings")}
               className="group inline-flex h-[46px] items-center gap-2 rounded-2xl bg-pro px-6 text-[14px] font-extrabold text-graphite transition-all hover:gap-3 hover:bg-pro-soft"
             >
               Настройка страниц

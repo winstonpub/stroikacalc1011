@@ -38,6 +38,7 @@ import {
 import { loadArmstrongSetup, loadCalcInput, saveArmstrongSetup, saveCalcInput } from "../utils/calcStorage";
 import { useSiteSettings, type CalcOption } from "../data/siteSettings";
 import { cn } from "../utils/cn";
+import { toHref } from "../utils/router";
 import { CompactViewToggle, useCompactView } from "./CalculatorCompactToggle";
 
 /* БЛОК: Поле ввода длины и ширины помещения (DimensionField)
@@ -869,7 +870,7 @@ export default function Calculator({
                 <div className="flex items-center gap-2">
                   {printHref ? (
                     <a
-                      href={printHref}
+                      href={toHref(printHref)}
                       onClick={persistSetup}
                       className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-line text-[12.5px] font-bold text-graphite/75 hover:border-graphite/50 transition-colors"
                     >

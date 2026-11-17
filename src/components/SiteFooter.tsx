@@ -10,6 +10,7 @@
 import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { useSiteSettings } from "../data/siteSettings";
 import { cn } from "../utils/cn";
+import { toHref } from "../utils/router";
 import { FooterIcon } from "./FooterIcon";
 import { FooterLogoMark } from "./Header";
 
@@ -43,7 +44,7 @@ export default function SiteFooter() {
           <div className={cn(logo.align === "center" && "text-center", logo.align === "right" && "text-right")}>
             {logo.visible && (
               <a
-                href="#/"
+                href={toHref("/")}
                 className="inline-flex items-center transition-opacity hover:opacity-90"
                 aria-label="Челябинск Стройка — на главную"
                 style={{ transform: `translate(${logo.offsetX}px, ${logo.offsetY}px)` }}
@@ -65,7 +66,7 @@ export default function SiteFooter() {
                   return (
                     <li key={item.id}>
                       <a
-                        href={item.href}
+                        href={external ? item.href : toHref(item.href)}
                         target={external ? "_blank" : undefined}
                         rel={external ? "noreferrer" : undefined}
                         className="group inline-flex items-center gap-1.5 transition-colors hover:text-pro"
@@ -105,7 +106,7 @@ export default function SiteFooter() {
           {/* БЛОК: Четвёртая колонка — кнопка «Настройка» | ЗА ЧТО ОТВЕЧАЕТ: Ведёт на защищённую паролем страницу «Администрирование» (#/admin) | ОТКУДА ДАННЫЕ: Статическая ссылка href="#/admin" | КАК ИЗМЕНИТЬ: Текст кнопки или адрес перехода можно поменять прямо здесь */}
           <div className="flex items-start md:justify-end">
             <a
-              href="#/admin"
+              href={toHref("/admin")}
               className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-[13px] font-bold text-white/75 transition-colors hover:border-pro/60 hover:bg-pro hover:text-graphite"
             >
               <SlidersHorizontal size={15} strokeWidth={2.4} />

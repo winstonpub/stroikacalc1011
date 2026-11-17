@@ -81,11 +81,11 @@ git push -u origin main
 Откройте по очереди:
 
 - <https://<логин>.github.io/StroikaCalc/> — главная страница;
-- <https://<логин>.github.io/StroikaCalc/#/grilyato> — калькулятор Грильято;
-- <https://<логин>.github.io/StroikaCalc/#/armstrong> — Армстронг;
-- <https://<логин>.github.io/StroikaCalc/#/roof> — кровля;
-- <https://<логин>.github.io/StroikaCalc/#/siding> — сайдинг;
-- <https://<логин>.github.io/StroikaCalc/#/admin> — администрирование
+- <https://<логин>.github.io/StroikaCalc/grilyato> — калькулятор Грильято;
+- <https://<логин>.github.io/StroikaCalc/armstrong> — Армстронг;
+- <https://<логин>.github.io/StroikaCalc/roof> — кровля;
+- <https://<логин>.github.io/StroikaCalc/siding> — сайдинг;
+- <https://<логин>.github.io/StroikaCalc/admin> — администрирование
   (пункт «Администрирование» скрыт из меню шапки; входите по прямой ссылке
   или через кнопку «Настройка» в подвале; пароль задан в `src/pages/AdminPage.tsx`).
 
@@ -113,7 +113,7 @@ git push -u origin main
 Настройки из раздела «Администрирование» (бегущая строка, меню, подвал) публикуются
 в Google-таблицу и обновляются **без** пересборки сайта — см. раздел README
 «Общие настройки для всех пользователей». Для этого адрес веб-приложения Apps Script
-вводится один раз на странице `#/admin` в блоке «Подключение к таблице».
+вводится один раз на странице `/admin` в блоке «Подключение к таблице».
 
 ---
 

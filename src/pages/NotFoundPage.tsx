@@ -5,12 +5,17 @@
  *   под ним — текст «Страница не найдена» и кнопка «На главную». Направляющие чертежа убраны.
  *   Анимация играет циклично: сборка → пауза 2 с с собранным логотипом → логотип исчезает → пауза 1 с → сначала.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: SVG-рисунок вставлен в этот файл (NOT_FOUND_SVG); длительности фаз — NF_ANIMATION_MS,
- *   NF_PAUSE_AFTER_MS и NF_PAUSE_BLANK_MS (миллисекунды).
+ *   NF_PAUSE_AFTER_MS и NF_PAUSE_BLANK_MS (миллисекунды). Расстояние между логотипом и текстом — из общих
+ *   настроек сайта (notFound.logoGap в src/data/siteSettings.ts).
  * КАК ИЗМЕНИТЬ: Текст и кнопку правьте в JSX ниже; длительность пауз — в NF_PAUSE_AFTER_MS и NF_PAUSE_BLANK_MS.
+ *   Расстояние между логотипом и текстом меняется без кода: «Администрирование» → «Блоки и наполнение
+ *   страниц сайта» → «404».
  * ========================================================================= */
 
 import { useEffect, useRef, useState } from "react";
+import { useSiteSettings } from "../data/siteSettings";
 import { cn } from "../utils/cn";
+import { toHref } from "../utils/router";
 
 /* БЛОК: Анимированный SVG «404 · построение» (NOT_FOUND_SVG)
  * ЗА ЧТО ОТВЕЧАЕТ: Рисует домик-калькулятор и цифры «404» по этапам: контур → детали → надпись.
@@ -52,12 +57,23 @@ const NOT_FOUND_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="236" heigh
       <g style="--rise:30px;transform-box:fill-box;transform-origin:center;animation:widen 180ms cubic-bezier(.33,1,.68,1) var(--nf-delay-2412ms) both"><rect x="360" y="371" width="26" height="8" rx="4" fill="#2b2b2b"/></g>
     </g>
     <g transform="translate(0 188)">
-      <g style="--rise:10px;animation:rise 324ms cubic-bezier(.33,1,.68,1) var(--nf-delay-2808ms) both"><path d="M332 0H650V385H735V588H650V700H415V588H0V406ZM415 214L269 385H415Z" fill="#ffffff" transform="translate(23.925 0) scale(0.05)"/></g>
-      <g style="--rise:10px;animation:rise 324ms cubic-bezier(.33,1,.68,1) var(--nf-delay-2952ms) both"><path d="M376.25 -26.25C583.68 -26.25 752.5 142.56 752.5 350C752.5 557.44 583.68 726.25 376.25 726.25C168.81 726.25 0 557.44 0 350C0 142.56 168.81 -26.25 376.25 -26.25ZM376.25 493.59C455.54 493.59 519.84 429.07 519.84 350C519.84 270.93 455.54 206.41 376.25 206.41C296.95 206.41 232.65 270.93 232.65 350C232.65 429.07 296.95 493.59 376.25 493.59Z" fill="#ffffff" transform="translate(67.175 0) scale(0.05)"/></g>
-      <g style="--rise:10px;animation:rise 324ms cubic-bezier(.33,1,.68,1) var(--nf-delay-3096ms) both"><path d="M332 0H650V385H735V588H650V700H415V588H0V406ZM415 214L269 385H415Z" fill="#ffffff" transform="translate(111.325 0) scale(0.05)"/></g>
+      <g style="--rise:10px;animation:rise 324ms cubic-bezier(.33,1,.68,1) var(--nf-delay-2808ms) both"><path d="M332 0H650V385H735V588H650V700H415V588H0V406ZM415 214L269 385H415Z" fill="#F5C400" transform="translate(23.925 0) scale(0.05)"/></g>
+      <g style="--rise:10px;animation:rise 324ms cubic-bezier(.33,1,.68,1) var(--nf-delay-2952ms) both"><path d="M376.25 -26.25C583.68 -26.25 752.5 142.56 752.5 350C752.5 557.44 583.68 726.25 376.25 726.25C168.81 726.25 0 557.44 0 350C0 142.56 168.81 -26.25 376.25 -26.25ZM376.25 493.59C455.54 493.59 519.84 429.07 519.84 350C519.84 270.93 455.54 206.41 376.25 206.41C296.95 206.41 232.65 270.93 232.65 350C232.65 429.07 296.95 493.59 376.25 493.59Z" fill="#F5C400" transform="translate(67.175 0) scale(0.05)"/></g>
+      <g style="--rise:10px;animation:rise 324ms cubic-bezier(.33,1,.68,1) var(--nf-delay-3096ms) both"><path d="M332 0H650V385H735V588H650V700H415V588H0V406ZM415 214L269 385H415Z" fill="#F5C400" transform="translate(111.325 0) scale(0.05)"/></g>
     </g>
   </g>
 </svg>`;
+
+/* БЛОК: Размеры рисунка для расчёта расстояния до текста (NF_ART_MAX_WIDTH, NF_ART_VIEW_WIDTH, NF_ART_BLANK_BOTTOM)
+ * ЗА ЧТО ОТВЕЧАЕТ: Внутри рисунка под цифрами «404» есть пустое поле. Чтобы расстояние из админки
+ *   совпадало с тем, что видно на экране, это поле вычитается из отступа текста.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Из разметки NOT_FOUND_SVG: ширина рисунка 236, высота 299, нижний край
+ *   цифр — на отметке 256,3, значит пустое поле снизу равно 42,7 единицы.
+ * КАК ИЗМЕНИТЬ: NF_ART_MAX_WIDTH — наибольшая ширина логотипа на экране в пикселях. Остальные два числа
+ *   меняйте только если заменили сам рисунок NOT_FOUND_SVG. */
+const NF_ART_MAX_WIDTH = 280;
+const NF_ART_VIEW_WIDTH = 236;
+const NF_ART_BLANK_BOTTOM = 42.7;
 
 /* БЛОК: Настройка цикла анимации (NF_ANIMATION_MS, NF_PAUSE_AFTER_MS, NF_PAUSE_BLANK_MS)
  * ЗА ЧТО ОТВЕЧАЕТ: Считает, сколько длится сборка логотипа, и задаёт паузы после неё.
@@ -82,6 +98,8 @@ export default function NotFoundPage() {
      Без него вставка происходила бы на каждой смене фазы, и логотип начинал собираться заново во время паузы. */
   const [runId, setRunId] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  /* Расстояние между логотипом и текстом, px — задаётся в админке на карточке страницы «404» */
+  const logoGap = useSiteSettings().notFound.logoGap;
 
   /* БЛОК: Цикл анимации (useEffect с таймерами)
    * ЗА ЧТО ОТВЕЧАЕТ: По окончании сборки держит логотип 1 с, затем прячет его на 1 с и запускает сборку снова.
@@ -157,16 +175,26 @@ export default function NotFoundPage() {
             Блок остаётся на месте и в фазе blank (только прозрачный), поэтому текст не прыгает. */}
         <div
           className={cn(
-            "w-full max-w-[280px] transition-opacity duration-500",
+            "w-full transition-opacity duration-500",
             phase === "blank" ? "opacity-0" : "opacity-100",
           )}
+          style={{ maxWidth: NF_ART_MAX_WIDTH }}
           aria-hidden={phase === "blank"}
         >
           <div ref={artRef} className="nf-art" />
         </div>
 
-        {/* БЛОК: Текст и кнопка под логотипом, по центру | ЗА ЧТО ОТВЕЧАЕТ: Заголовок «Страница не найдена» и кнопка «На главную» */}
-        <div className="mt-10 flex max-w-xl flex-col items-center text-center">
+        {/* БЛОК: Текст и кнопка под логотипом, по центру | ЗА ЧТО ОТВЕЧАЕТ: Заголовок «Страница не найдена» и кнопка «На главную».
+            Отступ сверху = расстояние из админки (logoGap) минус пустое поле внутри рисунка под цифрами «404»,
+            поэтому на экране получается ровно заданное число пикселей на любой ширине экрана.
+            КАК ИЗМЕНИТЬ: Расстояние — в админке на карточке страницы «404», в коде его править не нужно. */}
+        <div
+          data-testid="nf-text"
+          className="relative z-10 flex max-w-xl flex-col items-center text-center"
+          style={{
+            marginTop: `calc(${logoGap}px - min(${NF_ART_MAX_WIDTH}px, 100%) * ${NF_ART_BLANK_BOTTOM} / ${NF_ART_VIEW_WIDTH})`,
+          }}
+        >
           <h1 className="text-[46px] font-black leading-[0.98] tracking-[-0.02em] sm:text-[64px] lg:text-[76px]">
             Страница
             <br />
@@ -178,7 +206,7 @@ export default function NotFoundPage() {
 
           <div className="mt-8 flex justify-center">
             <a
-              href="#/"
+              href={toHref("/")}
               className="inline-flex h-[52px] items-center gap-2 rounded-2xl bg-[#f5c400] px-7 text-[15px] font-extrabold text-[#20282B] transition-all hover:gap-3 hover:bg-[#ffe066]"
             >
               На главную

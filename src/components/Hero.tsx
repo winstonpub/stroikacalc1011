@@ -8,6 +8,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Grid3X3, PackageCheck, Truck } from "lucide-react";
 import { useSiteSettings } from "../data/siteSettings";
+import { assetUrl, toHref } from "../utils/router";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -22,7 +23,7 @@ export default function Hero({ onStart }: { onStart: () => void }) {
       {/* БЛОК: Фоновая фотография и затемняющие градиенты | ЗА ЧТО ОТВЕЧАЕТ: Создаёт подложку под белым текстом | ОТКУДА ДАННЫЕ: Файл public/images/grilyato-hero.jpg | КАК ИЗМЕНИТЬ: Замените файл в папке public/images/ или укажите другой путь в src */}
       <div className="absolute inset-0">
         <img
-          src="images/grilyato-hero.jpg"
+          src={assetUrl("images/grilyato-hero.jpg")}
           alt="Чёрный потолок Грильято с встроенной подсветкой"
           className="w-full h-full object-cover opacity-55"
         />
@@ -69,7 +70,7 @@ export default function Hero({ onStart }: { onStart: () => void }) {
             </button>
             {aboutVisible && (
               <a
-                href="#/grilyato#features"
+                href={toHref("/grilyato#features")}
                 className="inline-flex items-center gap-2 h-[52px] px-6 rounded-2xl border border-white/20 text-white/85 font-bold text-[15px] hover:bg-white/10 hover:text-white transition-colors"
               >
                 О системе Грильято

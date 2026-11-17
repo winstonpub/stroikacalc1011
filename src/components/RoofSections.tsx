@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import SiteFooter from "./SiteFooter";
 import { useSiteSettings } from "../data/siteSettings";
+import { assetUrl } from "../utils/router";
 import RoofTypeGuide from "./RoofTypeGuide";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -103,7 +104,7 @@ function RoofSystemBlock() {
           >
             <div className="overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
               <img
-                src="images/roof-detail.jpg"
+                src={assetUrl("images/roof-detail.jpg")}
                 alt="Кровельные материалы и профили"
                 className="h-[380px] w-full object-cover lg:h-[520px]"
               />

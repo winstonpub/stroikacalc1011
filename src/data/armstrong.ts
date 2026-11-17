@@ -11,6 +11,7 @@ import {
   HANGERS, type CalcInput, type CalcResult, type GrilyatoColor, type SpecRow,
 } from "./grilyato";
 import type { PriceMap } from "./prices";
+import { assetUrl } from "../utils/router";
 
 const ceil = Math.ceil;
 const money = (v: number) => Math.round(v * 100) / 100;
@@ -19,7 +20,7 @@ const money = (v: number) => Math.round(v * 100) / 100;
  * ЗА ЧТО ОТВЕЧАЕТ: Задаёт кнопки выбора плиты в калькуляторе Армстронг, миниатюры с листанием фото и правила пересчёта площади в штуки или упаковки (packQty: 24 у Pharaon, 20 у Байкал и SO-DAE 7 мм, 16 у SO-DAE 10 мм).
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Фотографии лежат в папке public/images/armstrong/, цены подтягиваются по полю art из Google-таблицы.
  * КАК ИЗМЕНИТЬ: Положите новое фото в public/images/armstrong/ и пропишите его имя в image / gallery; поменяйте label (короткое имя на кнопке), name (полное имя в смете) или art (артикул). */
-const IMG = "images/armstrong/";
+const IMG = assetUrl("images/armstrong/");
 
 export interface ArmstrongTile {
   id: string;

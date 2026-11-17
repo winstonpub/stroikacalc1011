@@ -2,10 +2,11 @@
  * ФАЙЛ: src/data/siteSettings.ts — Настройки шапки, подвала и готовых размеров листа
  * ЗА ЧТО ОТВЕЧАЕТ: Хранит заводские настройки управляемых блоков сайта (бегущая строка, выпадающий список «Калькуляторы», колонки подвала сайта и кнопки готовых размеров кровельного листа), синхронизирует их с Google-таблицей и раздаёт всем страницам.
  * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Заводские значения берутся из DEFAULT_SETTINGS ниже и контактов STORE из src/data/grilyato.ts; актуальные опубликованные настройки подтягиваются из Google-таблицы через src/data/settingsSync.ts и кэшируются в localStorage.
- * КАК ИЗМЕНИТЬ: Все эти блоки удобнее всего редактировать без кода прямо на странице «Администрирование» (#/admin). Если нужно поменять заводские значения «по умолчанию» (к которым возвращает кнопка «Сбросить к исходным»), отредактируйте объект DEFAULT_SETTINGS ниже.
+ * КАК ИЗМЕНИТЬ: Все эти блоки удобнее всего редактировать без кода прямо на странице «Администрирование» (/admin). Если нужно поменять заводские значения «по умолчанию» (к которым возвращает кнопка «Сбросить к исходным»), отредактируйте объект DEFAULT_SETTINGS ниже.
  * ========================================================================= */
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { normalizeInternalHref } from "../utils/router";
 import { STORE } from "./grilyato";
 import { SIDING_COLORS } from "./siding";
 import {
@@ -174,6 +175,20 @@ export interface AboutVisibility {
   siding: boolean;
 }
 
+/* БЛОК: Настройки страницы «404» (NotFoundSettings, NOT_FOUND_GAP_MIN / MAX / DEFAULT)
+ * ЗА ЧТО ОТВЕЧАЕТ: Хранит расстояние между анимированным логотипом и текстом «Страница не найдена» с кнопкой.
+ *   Расстояние считается от нижнего края цифр «404» до блока с заголовком, в пикселях.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Значение задаётся в админке: «Блоки и наполнение страниц сайта» → «404».
+ * КАК ИЗМЕНИТЬ: NOT_FOUND_GAP_DEFAULT — расстояние по умолчанию, NOT_FOUND_GAP_MIN и NOT_FOUND_GAP_MAX —
+ *   границы ползунка в админке. */
+export interface NotFoundSettings {
+  /** Расстояние между логотипом с анимацией и текстом ниже, px */
+  logoGap: number;
+}
+export const NOT_FOUND_GAP_MIN = 0;
+export const NOT_FOUND_GAP_MAX = 200;
+export const NOT_FOUND_GAP_DEFAULT = 70;
+
 export interface SiteSettings {
   ticker: {
     speed: number;
@@ -202,6 +217,8 @@ export interface SiteSettings {
   logo: LogoSettings;
   /** Показ блоков «О …» на страницах калькуляторов (общая настройка для всех посетителей) */
   aboutVisible: AboutVisibility;
+  /** Страница «404»: расстояние между логотипом и текстом */
+  notFound: NotFoundSettings;
   defaultsVersion?: number;
   logoVersion?: number;
   knownSheetIds?: string[];
@@ -217,7 +234,7 @@ const LEGACY_MENU_IDS = ["m-grilyato", "m-armstrong", "m-roof", "m-test", "m-sme
 
 /** Кнопка «Администрирование» скрыта из выпадающего списка шапки. */
 const HIDDEN_MENU_IDS = ["m-admin", "m-smeta-test"];
-const HIDDEN_MENU_HREFS = ["#/admin", "#/smeta-test"];
+const HIDDEN_MENU_HREFS = ["/admin", "/smeta-test"];
 
 export const TICKER_SPEED_MIN = 1;
 export const TICKER_SPEED_MAX = 60;
@@ -252,21 +269,21 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     ],
   },
   menu: [
-    { id: "m-grilyato", label: "Грильято", href: "#/grilyato", enabled: true },
-    { id: "m-armstrong", label: "Армстронг", href: "#/armstrong", enabled: true },
-    { id: "m-roof", label: "Кровля", href: "#/roof", enabled: true },
-    { id: "m-siding", label: "Сайдинг", href: "#/siding", enabled: true },
-    { id: "m-test", label: "Тест", href: "#/test", enabled: true },
-    { id: "m-404", label: "404", href: "#/404", enabled: true },
+    { id: "m-grilyato", label: "Грильято", href: "/grilyato", enabled: true },
+    { id: "m-armstrong", label: "Армстронг", href: "/armstrong", enabled: true },
+    { id: "m-roof", label: "Кровля", href: "/roof", enabled: true },
+    { id: "m-siding", label: "Сайдинг", href: "/siding", enabled: true },
+    { id: "m-test", label: "Тест", href: "/test", enabled: true },
+    { id: "m-404", label: "404", href: "/404", enabled: true },
   ],
   footer: {
     calculatorsTitle: "Калькуляторы",
     storeTitle: "Магазин",
     links: [
-      { id: "f-grilyato", label: "Грильято", href: "#/grilyato", enabled: true },
-      { id: "f-armstrong", label: "Армстронг", href: "#/armstrong", enabled: true },
-      { id: "f-roof", label: "Кровля", href: "#/roof", enabled: true },
-      { id: "f-siding", label: "Сайдинг", href: "#/siding", enabled: true },
+      { id: "f-grilyato", label: "Грильято", href: "/grilyato", enabled: true },
+      { id: "f-armstrong", label: "Армстронг", href: "/armstrong", enabled: true },
+      { id: "f-roof", label: "Кровля", href: "/roof", enabled: true },
+      { id: "f-siding", label: "Сайдинг", href: "/siding", enabled: true },
     ],
     info: [
       { id: "f-address", text: STORE.fullAddress, icon: "pin", enabled: true },
@@ -381,6 +398,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     favicon: { background: "#20282B", color: "#FFBF2F", radius: 7 },
   },
   aboutVisible: { grilyato: true, armstrong: true, roof: true, siding: true },
+  notFound: { logoGap: NOT_FOUND_GAP_DEFAULT },
   defaultsVersion: 2,
   logoVersion: 3,
 };
@@ -427,7 +445,7 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
     .map((item, index) => ({
       id: str(item.id, `m-${index}`),
       label: str(item.label, ""),
-      href: str(item.href, "#/"),
+      href: normalizeInternalHref(str(item.href, "/")),
       enabled: item.enabled !== false,
       onHome: item.onHome !== false,
     }))
@@ -459,7 +477,7 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
     .map((item, index) => ({
       id: str(item.id, `f-${index}`),
       label: str(item.label, "").slice(0, 60),
-      href: str(item.href, "#/").slice(0, 400),
+      href: normalizeInternalHref(str(item.href, "/").slice(0, 400)),
       enabled: item.enabled !== false,
     }))
     .filter((item) => item.label.length > 0);
@@ -621,6 +639,18 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
     siding: aboutFlag(rawAbout.siding),
   };
 
+  /* БЛОК: Настройки страницы «404» (notFound)
+   * ЗА ЧТО ОТВЕЧАЕТ: Читает расстояние между логотипом и текстом и удерживает его в допустимых границах.
+   *   Если значения нет (старые сохранённые версии настроек), берётся расстояние по умолчанию.
+   * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Поле notFound из опубликованной Google-таблицы или из браузера.
+   * КАК ИЗМЕНИТЬ: Не требуется. Ползунок находится в админке на карточке страницы «404». */
+  const rawNotFound = (raw.notFound && typeof raw.notFound === "object" ? raw.notFound : {}) as Partial<
+    Record<keyof NotFoundSettings, unknown>
+  >;
+  const notFound: NotFoundSettings = {
+    logoGap: num(rawNotFound.logoGap, base.notFound.logoGap, NOT_FOUND_GAP_MIN, NOT_FOUND_GAP_MAX, 0),
+  };
+
   const rawCalculators =
     raw.calculators && typeof raw.calculators === "object"
       ? (raw.calculators as Record<string, unknown>)
@@ -713,6 +743,7 @@ function sanitize(raw: Partial<SiteSettings> | null): SiteSettings {
     },
     logo: logoSettings,
     aboutVisible,
+    notFound,
     defaultsVersion: 2,
     logoVersion: 3,
     knownSheetIds: Array.from(new Set([...known, ...defaultIds])),
