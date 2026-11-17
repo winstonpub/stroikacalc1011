@@ -246,7 +246,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     garland: true,
     snow: true,
     items: [
-      { id: "t1", text: "Лемана Про Челябинск — Подвесные потолки", enabled: true },
+      { id: "t1", text: "Челябинск Стройка — Калькуляторы", enabled: true },
       { id: "t2", text: "Точная смета за 1 минуту", enabled: true },
       { id: "t3", text: "Доставка от 3х дней", enabled: true },
     ],
