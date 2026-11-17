@@ -24,6 +24,7 @@ import {
   FileCode2,
   PackagePlus,
   Ruler,
+  Sparkles,
 } from "lucide-react";
 import {
   CALC_SIZE_MAX,
@@ -53,12 +54,16 @@ import { FooterLogoMark, LogoMark } from "../Header";
 import { cn } from "../../utils/cn";
 import AboutVisibilityToggle from "./AboutVisibilityToggle";
 import SiteFilesSection from "./SiteFilesSection";
+import SiteAuditSection from "./SiteAuditSection";
 
-/* БЛОК: Служебная вкладка «Файлы» (FILES_ROUTE)
- * ЗА ЧТО ОТВЕЧАЕТ: Отдельная кнопка в ряду страниц. Это не страница сайта, а справочник всех файлов проекта,
- *   поэтому у неё нет адреса для перехода и блоков настроек.
- * КАК ИЗМЕНИТЬ: Содержимое вкладки — в src/components/admin/SiteFilesSection.tsx и src/data/siteFiles.ts. */
+/* БЛОК: Служебные вкладки раздела (FILES_ROUTE, AUDIT_ROUTE)
+ * ЗА ЧТО ОТВЕЧАЕТ: Дополнительные кнопки в ряду страниц. Это не страницы сайта, а справочники:
+ *   «Файлы» — все файлы проекта с пояснениями, «ИИ» — разбор недочётов сайта и как их исправить.
+ *   У них нет адреса для перехода и блоков настроек страниц.
+ * КАК ИЗМЕНИТЬ: Содержимое вкладки «Файлы» — в src/components/admin/SiteFilesSection.tsx,
+ *   вкладки «ИИ» — в src/components/admin/SiteAuditSection.tsx. */
 const FILES_ROUTE = "#files";
+const AUDIT_ROUTE = "#ai";
 
 /* Подписи и теги для страниц, у которых есть карточка в блоке «Выберите Калькулятор» на главной.
  * Остальные страницы выводятся в этом же списке, но кнопка «Главная» у них недоступна — карточки на главной у них нет. */
@@ -281,6 +286,8 @@ export default function PageSettingsSection({
   const [savedBannerMsg] = useState("");
 
   const filesActive = selectedRoute === FILES_ROUTE;
+  const auditActive = selectedRoute === AUDIT_ROUTE;
+  const serviceTabTitle = filesActive ? "Файлы" : auditActive ? "ИИ" : "";
   const activePage = pages.find((p) => p.route === selectedRoute) ?? pages[0];
 
   /* Делим страницы ровно на две аккуратные строки */
@@ -348,7 +355,7 @@ export default function PageSettingsSection({
                   Выберите страницу для настройки её блоков:
                 </span>
                 <span className="text-[11px] font-semibold text-graphite/40">
-                  Активна: <b className="text-graphite">{filesActive ? "Файлы" : activePage.title}</b>
+                  Активна: <b className="text-graphite">{serviceTabTitle || activePage.title}</b>
                 </span>
               </div>
 
@@ -436,7 +443,7 @@ export default function PageSettingsSection({
                   })}
                 </div>
 
-                {/* Строка 3: кнопка «Файлы» — справочник всех файлов сайта (не страница, а служебная вкладка) */}
+                {/* Строка 3: служебные вкладки — «Файлы» (справочник файлов) и «ИИ» (разбор недочётов) */}
                 <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
                   <button
                     type="button"
@@ -469,6 +476,38 @@ export default function PageSettingsSection({
                       справочник
                     </span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRoute(AUDIT_ROUTE)}
+                    aria-pressed={auditActive}
+                    className={cn(
+                      "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left transition-all",
+                      auditActive
+                        ? "border-graphite bg-graphite text-white shadow-md ring-2 ring-pro"
+                        : "border-dashed border-graphite/30 bg-smoke/60 text-graphite hover:border-graphite/50 hover:bg-white",
+                    )}
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div
+                        className={cn(
+                          "grid h-7 w-7 shrink-0 place-items-center rounded-lg",
+                          auditActive ? "bg-pro text-graphite" : "bg-white text-graphite",
+                        )}
+                      >
+                        <Sparkles size={14} strokeWidth={2.4} />
+                      </div>
+                      <span className="truncate text-[12.5px] font-black">ИИ</span>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tabular",
+                        auditActive ? "bg-white/20 text-white" : "bg-white text-graphite/60",
+                      )}
+                    >
+                      недочёты
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -482,6 +521,16 @@ export default function PageSettingsSection({
                   <span className="rounded-lg bg-smoke px-2 py-0.5 text-[11px] font-bold text-graphite/60">что за что отвечает</span>
                 </div>
                 <SiteFilesSection />
+              </div>
+            ) : auditActive ? (
+              /* БЛОК: Вкладка «ИИ» — недочёты сайта, как исправить и что поменять */
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1 text-[14px] font-black text-graphite">
+                  <Sparkles size={18} strokeWidth={2.4} className="text-pro" />
+                  <span>ИИ: разбор сайта</span>
+                  <span className="rounded-lg bg-smoke px-2 py-0.5 text-[11px] font-bold text-graphite/60">недочёты и рекомендации</span>
+                </div>
+                <SiteAuditSection />
               </div>
             ) : (
             /* БЛОК: Список всех блоков выбранной страницы с редакторами */
@@ -1196,7 +1245,8 @@ function renderPageBlocks(
   if (route === "#/test") {
     return (
       <div className="rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-[13.5px] font-semibold text-graphite/50">
-        Страница «Тест» является копией страницы «Сайдинг» (со своей отдельной памятью расчёта) и использует общие стартовые настройки вкладки «Сайдинг». Блок «О сайдинге» на этой странице управляется переключателем в карточке «Сайдинг».
+        Страница «Тест» сейчас показывает заглушку «Тестовая страница» и не содержит настраиваемых блоков.
+        Чтобы вернуть на неё содержимое (например, калькулятор фасада), отредактируйте файл src/pages/TestPage.tsx.
       </div>
     );
   }
