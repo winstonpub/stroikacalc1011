@@ -35,7 +35,7 @@ export const DEFAULT_ARMSTRONG_TILE: ArmstrongTile = {
   id: "white-aluminum",
   label: "Белый алюминий",
   name: "Потолочная панель AP600A6 Tegular/Т-24 белый алюминий",
-  art: "12903346", image: `${IMG}tile-aluminum.webp`,
+  art: "12903346", image: `${IMG}tile-aluminum-1.webp`,
   gallery: [`${IMG}tile-aluminum-1.webp`, `${IMG}tile-aluminum-2.webp`],
 };
 
@@ -95,7 +95,7 @@ export function getArmstrongTile(id: string): ArmstrongTile {
 
 /* БЛОК: Варианты каркаса Т-профиля Т-24 (ARMSTRONG_PROFILES)
  * ЗА ЧТО ОТВЕЧАЕТ: Хранит серии «Премиум» и «Эконом» — у каждой серии сразу три артикула: несущая направляющая 3,7 м (main37), поперечная 1,2 м (cross12) и поперечная 0,6 м (cross06).
- * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Артикулы магазина Челябинск Стройка.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Артикулы магазина Лемана Про Челябинск.
  * КАК ИЗМЕНИТЬ: Поменяйте артикулы внутри объекта arts или подпись на кнопке в поле label. */
 export interface ArmstrongProfile {
   id: string;
@@ -125,7 +125,7 @@ export function getArmstrongProfile(id: string): ArmstrongProfile {
 
 /* БЛОК: Варианты пристенного периметрального угла 3 м (ARMSTRONG_ANGLES)
  * ЗА ЧТО ОТВЕЧАЕТ: Задаёт выбор стального или алюминиевого уголка 19×19×3000 мм по периметру комнаты.
- * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Артикулы магазина Челябинск Стройка.
+ * ОТКУДА БЕРЁТ ИНФОРМАЦИЮ: Артикулы магазина Лемана Про Челябинск.
  * КАК ИЗМЕНИТЬ: Измените label (текст кнопки), name (название в смете) или art (артикул). */
 export interface ArmstrongAngle {
   id: string;

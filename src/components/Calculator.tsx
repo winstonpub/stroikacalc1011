@@ -423,7 +423,7 @@ export default function Calculator({
 
   const csvText = useMemo(() => {
     const head = [
-      armstrong ? "Спецификация материалов Армстронг" : `Челябинск Стройка — Смета на потолок Грильято`,
+      armstrong ? "Спецификация материалов Армстронг" : `Лемана Про Челябинск — Смета на потолок Грильято`,
       `Помещение;${fmt1(input.length)} x ${fmt1(input.width)} м;S = ${fmt1(res.area)} м2;P = ${fmt1(res.perimeter)} м`,
       armstrong
         ? `Плита;${selectedTile.label};Профиль;${selectedProfile.label};Угол;${selectedAngle.label};Подвес;${res.hanger.name};Запас;${input.sparePct}%`

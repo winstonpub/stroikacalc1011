@@ -21,6 +21,7 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
+  FileCode2,
   PackagePlus,
   Ruler,
 } from "lucide-react";
@@ -51,6 +52,13 @@ import { TickerEditor, FooterEditor, NumberField, SheetEditor } from "../../page
 import { FooterLogoMark, LogoMark } from "../Header";
 import { cn } from "../../utils/cn";
 import AboutVisibilityToggle from "./AboutVisibilityToggle";
+import SiteFilesSection from "./SiteFilesSection";
+
+/* БЛОК: Служебная вкладка «Файлы» (FILES_ROUTE)
+ * ЗА ЧТО ОТВЕЧАЕТ: Отдельная кнопка в ряду страниц. Это не страница сайта, а справочник всех файлов проекта,
+ *   поэтому у неё нет адреса для перехода и блоков настроек.
+ * КАК ИЗМЕНИТЬ: Содержимое вкладки — в src/components/admin/SiteFilesSection.tsx и src/data/siteFiles.ts. */
+const FILES_ROUTE = "#files";
 
 /* Подписи и теги для страниц, у которых есть карточка в блоке «Выберите Калькулятор» на главной.
  * Остальные страницы выводятся в этом же списке, но кнопка «Главная» у них недоступна — карточки на главной у них нет. */
@@ -272,6 +280,7 @@ export default function PageSettingsSection({
   const [selectedRoute, setSelectedRoute] = useState<string>("#/");
   const [savedBannerMsg] = useState("");
 
+  const filesActive = selectedRoute === FILES_ROUTE;
   const activePage = pages.find((p) => p.route === selectedRoute) ?? pages[0];
 
   /* Делим страницы ровно на две аккуратные строки */
@@ -339,7 +348,7 @@ export default function PageSettingsSection({
                   Выберите страницу для настройки её блоков:
                 </span>
                 <span className="text-[11px] font-semibold text-graphite/40">
-                  Активна: <b className="text-graphite">{activePage.title}</b>
+                  Активна: <b className="text-graphite">{filesActive ? "Файлы" : activePage.title}</b>
                 </span>
               </div>
 
@@ -426,10 +435,56 @@ export default function PageSettingsSection({
                     );
                   })}
                 </div>
+
+                {/* Строка 3: кнопка «Файлы» — справочник всех файлов сайта (не страница, а служебная вкладка) */}
+                <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRoute(FILES_ROUTE)}
+                    aria-pressed={filesActive}
+                    className={cn(
+                      "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left transition-all",
+                      filesActive
+                        ? "border-graphite bg-graphite text-white shadow-md ring-2 ring-pro"
+                        : "border-dashed border-graphite/30 bg-smoke/60 text-graphite hover:border-graphite/50 hover:bg-white",
+                    )}
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div
+                        className={cn(
+                          "grid h-7 w-7 shrink-0 place-items-center rounded-lg",
+                          filesActive ? "bg-pro text-graphite" : "bg-white text-graphite",
+                        )}
+                      >
+                        <FileCode2 size={14} strokeWidth={2.4} />
+                      </div>
+                      <span className="truncate text-[12.5px] font-black">Файлы</span>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tabular",
+                        filesActive ? "bg-white/20 text-white" : "bg-white text-graphite/60",
+                      )}
+                    >
+                      справочник
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* БЛОК: Список всех блоков выбранной страницы с редакторами */}
+            {filesActive ? (
+              /* БЛОК: Вкладка «Файлы» — все файлы сайта с пояснениями */
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1 text-[14px] font-black text-graphite">
+                  <FileCode2 size={18} strokeWidth={2.4} className="text-pro" />
+                  <span>Файлы сайта</span>
+                  <span className="rounded-lg bg-smoke px-2 py-0.5 text-[11px] font-bold text-graphite/60">что за что отвечает</span>
+                </div>
+                <SiteFilesSection />
+              </div>
+            ) : (
+            /* БЛОК: Список всех блоков выбранной страницы с редакторами */
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-2 text-[14px] font-black text-graphite">
@@ -453,6 +508,7 @@ export default function PageSettingsSection({
               {/* Отображение блоков конкретной страницы */}
               {renderPageBlocks(selectedRoute, settings, update, pages)}
             </div>
+            )}
           </div>
         )}
       </div>
